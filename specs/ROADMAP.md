@@ -25,101 +25,101 @@ We avoid mocks because they lie. Instead:
 - **Recorded fixtures**: Real Fireflies API responses captured in `test/fixtures/`, replayed via msw or nock. Re-record periodically to catch API drift.
 - **Live E2E** (optional): `FIREFLIES_API_KEY=xxx npm run test:live` - validates fixtures, skipped in CI.
 
-## Milestone 1: Foundation + Transcripts (v0.1.0)
+## Milestone 1: Foundation + Transcripts (v0.1.0) ✅
 
 **Goal:** Working package that can fetch transcripts. Validates project setup and API design.
 
-- [ ] Project setup
-  - [ ] package.json with correct exports config
-  - [ ] tsconfig.json (strict, ESM)
-  - [ ] tsup.config.ts (ESM + CJS dual output)
-  - [ ] biome.json
-  - [ ] vitest.config.ts (separate configs for unit/integration/live)
-  - [ ] `test/fixtures/` directory structure
-  - [ ] Scripts: `test`, `test:live`, `test:record`
-- [ ] Core infrastructure
-  - [ ] `src/client.ts` - FirefliesClient entry point
-  - [ ] `src/graphql/client.ts` - GraphQL executor with native fetch
-  - [ ] `src/errors.ts` - Error classes (FirefliesError, AuthenticationError, RateLimitError, NotFoundError)
-  - [ ] `src/utils/retry.ts` - Exponential backoff
-- [ ] Transcripts vertical
-  - [ ] `src/types/transcript.ts` - Transcript, Sentence, Speaker, Summary types
-  - [ ] `src/types/params.ts` - TranscriptsQueryParams
-  - [ ] `src/graphql/queries/transcripts.ts` - get, list queries
-  - [ ] `src/helpers/pagination.ts` - listAll async iterator
-- [ ] Tests
-  - [ ] Unit tests for retry logic, error parsing
-  - [ ] Record fixtures from real Fireflies API (`test/fixtures/transcripts/`)
-  - [ ] Integration tests using recorded fixtures
-  - [ ] Optional live E2E test (`npm run test:live`)
-- [ ] `src/index.ts` - Public exports
+- [x] Project setup
+  - [x] package.json with correct exports config
+  - [x] tsconfig.json (strict, ESM)
+  - [x] tsup.config.ts (ESM + CJS dual output)
+  - [x] biome.json
+  - [x] vitest.config.ts (separate configs for unit/integration/live)
+  - [x] `test/fixtures/` directory structure
+  - [x] Scripts: `test`, `test:live`, `test:record`
+- [x] Core infrastructure
+  - [x] `src/client.ts` - FirefliesClient entry point
+  - [x] `src/graphql/client.ts` - GraphQL executor with native fetch
+  - [x] `src/errors.ts` - Error classes (FirefliesError, AuthenticationError, RateLimitError, NotFoundError)
+  - [x] `src/utils/retry.ts` - Exponential backoff
+- [x] Transcripts vertical
+  - [x] `src/types/transcript.ts` - Transcript, Sentence, Speaker, Summary types
+  - [x] `src/types/params.ts` - TranscriptsQueryParams
+  - [x] `src/graphql/queries/transcripts.ts` - get, list queries
+  - [x] `src/helpers/pagination.ts` - listAll async iterator
+- [x] Tests
+  - [x] Unit tests for retry logic, error parsing
+  - [x] Record fixtures from real Fireflies API (`test/fixtures/transcripts/`)
+  - [x] Integration tests using recorded fixtures
+  - [x] Optional live E2E test (`npm run test:live`)
+- [x] `src/index.ts` - Public exports
 
 **Deliverable:** `npm install && npm run build` works. Can fetch transcripts from Fireflies API.
 
 ---
 
-## Milestone 2: Realtime API (v0.2.0)
+## Milestone 2: Realtime API (v0.2.0) ✅
 
 **Goal:** Live transcription streaming - the key differentiator.
 
-- [ ] Realtime infrastructure
-  - [ ] `src/realtime/types.ts` - TranscriptChunk, RealtimeEvents
-  - [ ] `src/realtime/client.ts` - Socket.IO connection management
-  - [ ] `src/realtime/stream.ts` - AsyncIterable wrapper
-  - [ ] `src/utils/dedup.ts` - Chunk deduplication by chunk_id
-- [ ] Features
-  - [ ] Event-based API (`stream.on('chunk', ...)`)
-  - [ ] Async iterator API (`for await (const chunk of stream)`)
-  - [ ] Auto-reconnect with exponential backoff
-  - [ ] Connection timeout handling
-- [ ] Tests
-  - [ ] Unit tests for deduplication, reconnection logic
-  - [ ] Socket.IO test server for integration tests (real protocol, controlled responses)
-  - [ ] Record realtime fixtures from live meeting
-  - [ ] Optional live E2E with active meeting
+- [x] Realtime infrastructure
+  - [x] `src/realtime/types.ts` - TranscriptChunk, RealtimeEvents
+  - [x] `src/realtime/client.ts` - Socket.IO connection management
+  - [x] `src/realtime/stream.ts` - AsyncIterable wrapper
+  - [x] `src/utils/dedup.ts` - Chunk deduplication by chunk_id
+- [x] Features
+  - [x] Event-based API (`stream.on('chunk', ...)`)
+  - [x] Async iterator API (`for await (const chunk of stream)`)
+  - [x] Auto-reconnect with exponential backoff
+  - [x] Connection timeout handling
+- [x] Tests
+  - [x] Unit tests for deduplication, reconnection logic
+  - [x] Socket.IO test server for integration tests (real protocol, controlled responses)
+  - [x] Record realtime fixtures from live meeting
+  - [x] Optional live E2E with active meeting
 
 **Deliverable:** Can stream live transcription from active Fireflies meetings.
 
 ---
 
-## Milestone 3: Full GraphQL Coverage (v0.3.0)
+## Milestone 3: Full GraphQL Coverage (v0.3.0) ✅
 
 **Goal:** Feature parity with official SDK for GraphQL operations.
 
-- [ ] Users vertical
-  - [ ] `src/types/user.ts`
-  - [ ] `src/graphql/queries/users.ts` - get, list, me
-  - [ ] `src/graphql/mutations/users.ts` - setRole
-- [ ] Bites vertical
-  - [ ] `src/types/bite.ts`
-  - [ ] `src/graphql/queries/bites.ts` - get, list
-  - [ ] `src/graphql/mutations/bites.ts` - create
-- [ ] Meetings vertical
-  - [ ] `src/types/meeting.ts`
-  - [ ] `src/graphql/queries/meetings.ts` - active
-  - [ ] `src/graphql/mutations/meetings.ts` - addBot
-- [ ] Audio vertical
-  - [ ] `src/graphql/mutations/audio.ts` - upload
-- [ ] Transcripts mutations
-  - [ ] `src/graphql/mutations/transcripts.ts` - delete
-- [ ] AI Apps
-  - [ ] `src/types/ai-app.ts`
-  - [ ] `src/graphql/queries/ai-apps.ts` - list
+- [x] Users vertical
+  - [x] `src/types/user.ts`
+  - [x] `src/graphql/queries/users.ts` - get, list, me
+  - [x] `src/graphql/mutations/users.ts` - setRole
+- [x] Bites vertical
+  - [x] `src/types/bite.ts`
+  - [x] `src/graphql/queries/bites.ts` - get, list
+  - [x] `src/graphql/mutations/bites.ts` - create
+- [x] Meetings vertical
+  - [x] `src/types/meeting.ts`
+  - [x] `src/graphql/queries/meetings.ts` - active
+  - [x] `src/graphql/mutations/meetings.ts` - addBot
+- [x] Audio vertical
+  - [x] `src/graphql/mutations/audio.ts` - upload
+- [x] Transcripts mutations
+  - [x] `src/graphql/mutations/transcripts.ts` - delete
+- [x] AI Apps
+  - [x] `src/types/ai-app.ts`
+  - [x] `src/graphql/queries/ai-apps.ts` - list
 
 **Deliverable:** Full GraphQL API coverage matching official SDK.
 
 ---
 
-## Milestone 4: Convenience Helpers (v0.4.0)
+## Milestone 4: Convenience Helpers (v0.4.0) ✅
 
 **Goal:** Power-user features that go beyond the official SDK.
 
-- [ ] Multi-user operations
-  - [ ] `src/helpers/multi-user.ts` - getMeetingsForMultipleUsers with deduplication
-  - [ ] `src/helpers/batch.ts` - Batch processor with rate limiting
-- [ ] Analysis helpers
-  - [ ] `src/helpers/external-questions.ts` - findExternalParticipantQuestions
-  - [ ] `src/helpers/videos.ts` - getMeetingVideos
+- [x] Multi-user operations
+  - [x] `src/helpers/multi-user.ts` - getMeetingsForMultipleUsers with deduplication
+  - [x] `src/helpers/batch.ts` - Batch processor with rate limiting
+- [x] Analysis helpers
+  - [x] `src/helpers/external-questions.ts` - findExternalParticipantQuestions
+  - [x] `src/helpers/videos.ts` - getMeetingVideos
 
 **Deliverable:** All convenience features from official SDK plus improvements.
 
@@ -129,22 +129,22 @@ We avoid mocks because they lie. Instead:
 
 **Goal:** Production-ready, publishable package.
 
-- [ ] Documentation
-  - [ ] README.md with examples
+- [x] Documentation
+  - [x] README.md with examples
   - [ ] API documentation (TypeDoc or similar)
-  - [ ] Migration guide from official SDK
+  - [x] Migration guide from official SDK
 - [ ] Examples
   - [ ] `examples/basic-usage.ts`
   - [ ] `examples/realtime-stream.ts`
   - [ ] `examples/multi-user.ts`
-- [ ] CI/CD
-  - [ ] GitHub Actions for test/lint/build
-  - [ ] npm publish workflow
-  - [ ] Changesets or similar for versioning
-- [ ] Final polish
-  - [ ] 100% type coverage
-  - [ ] JSDoc comments on public API
-  - [ ] License file
+- [x] CI/CD
+  - [x] GitHub Actions for test/lint/build
+  - [x] npm publish workflow
+  - [x] Changesets or similar for versioning
+- [x] Final polish
+  - [x] 100% type coverage
+  - [x] JSDoc comments on public API
+  - [x] License file
 
 **Deliverable:** Published to npm, ready for production use.
 

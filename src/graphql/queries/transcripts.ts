@@ -383,38 +383,69 @@ type TranscriptResponse = {
   channels?: Channel[] | null;
 };
 
+/** Convert null to undefined for optional fields */
+function orUndefined<T>(value: T | null | undefined): T | undefined {
+  return value ?? undefined;
+}
+
+/** Convert null to empty array for required array fields */
+function orEmptyArray<T>(value: T[] | null | undefined): T[] {
+  return value ?? [];
+}
+
+/** Normalize required string/number fields */
+function normalizeRequiredFields(raw: TranscriptResponse) {
+  return {
+    id: raw.id,
+    title: raw.title ?? '',
+    organizer_email: raw.organizer_email ?? '',
+    transcript_url: raw.transcript_url ?? '',
+    duration: raw.duration ?? 0,
+    dateString: raw.dateString ?? '',
+    date: raw.date ?? 0,
+  };
+}
+
+/** Normalize array fields */
+function normalizeArrayFields(raw: TranscriptResponse) {
+  return {
+    speakers: orEmptyArray(raw.speakers),
+    participants: orEmptyArray(raw.participants),
+    meeting_attendees: orEmptyArray(raw.meeting_attendees),
+    meeting_attendance: orEmptyArray(raw.meeting_attendance),
+    fireflies_users: orEmptyArray(raw.fireflies_users),
+    workspace_users: orEmptyArray(raw.workspace_users),
+    sentences: orEmptyArray(raw.sentences),
+    channels: orEmptyArray(raw.channels),
+  };
+}
+
+/** Normalize optional fields */
+function normalizeOptionalFields(raw: TranscriptResponse) {
+  return {
+    host_email: orUndefined(raw.host_email),
+    user: orUndefined(raw.user),
+    audio_url: orUndefined(raw.audio_url),
+    video_url: orUndefined(raw.video_url),
+    calendar_id: orUndefined(raw.calendar_id),
+    summary: orUndefined(raw.summary),
+    meeting_info: orUndefined(raw.meeting_info),
+    cal_id: orUndefined(raw.cal_id),
+    calendar_type: orUndefined(raw.calendar_type),
+    apps_preview: orUndefined(raw.apps_preview),
+    meeting_link: orUndefined(raw.meeting_link),
+    analytics: orUndefined(raw.analytics),
+  };
+}
+
 /**
  * Normalize a transcript response to ensure consistent types.
  */
 function normalizeTranscript(raw: TranscriptResponse): Transcript {
   return {
-    id: raw.id,
-    title: raw.title ?? '',
-    organizer_email: raw.organizer_email ?? '',
-    host_email: raw.host_email ?? undefined,
-    user: raw.user ?? undefined,
-    speakers: raw.speakers ?? [],
-    transcript_url: raw.transcript_url ?? '',
-    participants: raw.participants ?? [],
-    meeting_attendees: raw.meeting_attendees ?? [],
-    meeting_attendance: raw.meeting_attendance ?? [],
-    fireflies_users: raw.fireflies_users ?? [],
-    workspace_users: raw.workspace_users ?? [],
-    duration: raw.duration ?? 0,
-    dateString: raw.dateString ?? '',
-    date: raw.date ?? 0,
-    audio_url: raw.audio_url ?? undefined,
-    video_url: raw.video_url ?? undefined,
-    sentences: raw.sentences ?? [],
-    calendar_id: raw.calendar_id ?? undefined,
-    summary: raw.summary ?? undefined,
-    meeting_info: raw.meeting_info ?? undefined,
-    cal_id: raw.cal_id ?? undefined,
-    calendar_type: raw.calendar_type ?? undefined,
-    apps_preview: raw.apps_preview ?? undefined,
-    meeting_link: raw.meeting_link ?? undefined,
-    analytics: raw.analytics ?? undefined,
-    channels: raw.channels ?? [],
+    ...normalizeRequiredFields(raw),
+    ...normalizeArrayFields(raw),
+    ...normalizeOptionalFields(raw),
   };
 }
 

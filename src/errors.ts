@@ -189,14 +189,23 @@ export function parseErrorResponse(
   }
 }
 
+interface ErrorBody {
+  message?: string;
+  error?: string;
+}
+
+interface RetryBody {
+  retryAfter?: number;
+}
+
 function extractErrorMessage(body: unknown): string | undefined {
   if (typeof body === 'object' && body !== null) {
-    const obj = body as Record<string, unknown>;
-    if (typeof obj['message'] === 'string') {
-      return obj['message'];
+    const obj = body as ErrorBody;
+    if (typeof obj.message === 'string') {
+      return obj.message;
     }
-    if (typeof obj['error'] === 'string') {
-      return obj['error'];
+    if (typeof obj.error === 'string') {
+      return obj.error;
     }
   }
   return undefined;
@@ -204,9 +213,9 @@ function extractErrorMessage(body: unknown): string | undefined {
 
 function extractRetryAfter(body: unknown): number | undefined {
   if (typeof body === 'object' && body !== null) {
-    const obj = body as Record<string, unknown>;
-    if (typeof obj['retryAfter'] === 'number') {
-      return obj['retryAfter'];
+    const obj = body as RetryBody;
+    if (typeof obj.retryAfter === 'number') {
+      return obj.retryAfter;
     }
   }
   return undefined;
