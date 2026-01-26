@@ -19,8 +19,9 @@ export interface MultiUserOptions {
    */
   filter?: Omit<TranscriptsListParams, 'skip' | 'limit'>;
   /**
-   * Delay in milliseconds between API calls.
-   * Helps avoid rate limiting when fetching from many accounts.
+   * Delay in milliseconds between yielded transcripts.
+   * Helps throttle processing and reduce memory pressure.
+   * Note: API rate limiting is handled by the underlying client.
    * @default 100
    */
   delayMs?: number;

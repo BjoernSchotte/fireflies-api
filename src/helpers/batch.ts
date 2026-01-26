@@ -94,7 +94,8 @@ export async function* batch<T, R>(
  * @param items - Array of items to process
  * @param processor - Function to process each item
  * @param options - Batch processing options plus continueOnError
- * @returns Array of results in same order as input items
+ * @returns Array of successful results. When continueOnError is false, results
+ *   match input order. When true, failed items are omitted (array may be shorter).
  * @throws First error encountered if continueOnError is false (default)
  *
  * @example
