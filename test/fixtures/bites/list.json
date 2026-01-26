@@ -1,0 +1,65 @@
+{
+  "data": {
+    "bites": [
+      {
+        "id": "bite-1",
+        "transcript_id": "transcript-abc",
+        "user_id": "user-123",
+        "name": "Key Discussion Point",
+        "status": "ready",
+        "summary": "Important discussion about API design",
+        "summary_status": "processed",
+        "media_type": "audio",
+        "start_time": 120,
+        "end_time": 180,
+        "created_at": "2024-01-15T12:00:00.000Z",
+        "thumbnail": "https://example.com/thumb.jpg",
+        "preview": "https://example.com/preview.mp4",
+        "captions": [
+          {
+            "index": 0,
+            "text": "Let's discuss the API",
+            "start_time": 120,
+            "end_time": 125,
+            "speaker_id": "speaker-1",
+            "speaker_name": "John"
+          }
+        ],
+        "sources": [
+          {
+            "src": "https://example.com/audio.mp3",
+            "type": "audio/mp3"
+          }
+        ],
+        "user": {
+          "id": "user-123",
+          "name": "John Doe",
+          "first_name": "John",
+          "last_name": "Doe",
+          "picture": "https://example.com/photo.jpg"
+        },
+        "created_from": {
+          "id": "transcript-abc",
+          "name": "Weekly Standup",
+          "type": "transcript",
+          "duration": 1800
+        },
+        "privacies": ["team"]
+      },
+      {
+        "id": "bite-2",
+        "transcript_id": "transcript-abc",
+        "user_id": "user-123",
+        "name": "Action Items",
+        "status": "ready",
+        "media_type": "audio",
+        "start_time": 300,
+        "end_time": 360,
+        "created_at": "2024-01-15T12:05:00.000Z",
+        "captions": [],
+        "sources": [],
+        "privacies": []
+      }
+    ]
+  }
+}

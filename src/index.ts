@@ -19,25 +19,60 @@ export {
 } from './errors.js';
 
 // API interfaces
+export type { AudioAPI } from './graphql/mutations/audio.js';
+export type { TranscriptsMutationsAPI } from './graphql/mutations/transcripts.js';
+export type { UsersMutationsAPI } from './graphql/mutations/users.js';
+export type { AIAppsAPI } from './graphql/queries/ai-apps.js';
+export type { BitesAPI } from './graphql/queries/bites.js';
+export type { MeetingsAPI } from './graphql/queries/meetings.js';
 export type { TranscriptsAPI } from './graphql/queries/transcripts.js';
+export type { UsersAPI } from './graphql/queries/users.js';
+
 // Helpers
 export { collectAll, paginate } from './helpers/pagination.js';
-export type { RealtimeAPI } from './realtime/api.js';
+
 // Realtime
+export type { RealtimeAPI } from './realtime/api.js';
 export { RealtimeStream } from './realtime/stream.js';
 export type {
   RealtimeConfig,
   RealtimeEvents,
   TranscriptionChunk,
 } from './realtime/types.js';
+// AI App types
+export type { AIApp } from './types/ai-app.js';
+// Bite types
+export type {
+  Bite,
+  BiteCaption,
+  BiteCreatedFrom,
+  BiteSource,
+  BiteUser,
+} from './types/bite.js';
 // Configuration
 export type { FirefliesConfig, RetryConfig } from './types/config.js';
+
+// Meeting types
+export type {
+  ActiveMeeting,
+  MeetingPrivacy,
+  MeetingState,
+} from './types/meeting.js';
+
 // Parameter types
 export type {
+  ActiveMeetingsParams,
+  AddBotParams,
+  AIAppsListParams,
+  BitesListParams,
+  CreateBiteParams,
   TranscriptGetParams,
   TranscriptsListParams,
   TranscriptsQueryScope,
+  UploadAudioAttendee,
+  UploadAudioParams,
 } from './types/params.js';
+
 // Transcript types
 export type {
   AIAppOutput,
@@ -58,5 +93,14 @@ export type {
   Transcript,
   User,
 } from './types/transcript.js';
+
+// User types
+export type {
+  UserGroup,
+  UserGroupMember,
+  UserProfile,
+  UserRole,
+} from './types/user.js';
+
 // Utilities
 export { Deduplicator } from './utils/dedup.js';

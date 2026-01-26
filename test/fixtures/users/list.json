@@ -1,0 +1,24 @@
+{
+  "data": {
+    "users": [
+      {
+        "user_id": "user-123",
+        "email": "john@example.com",
+        "name": "John Doe",
+        "num_transcripts": 42,
+        "is_admin": true,
+        "integrations": ["google_calendar"],
+        "user_groups": []
+      },
+      {
+        "user_id": "user-456",
+        "email": "jane@example.com",
+        "name": "Jane Smith",
+        "num_transcripts": 15,
+        "is_admin": false,
+        "integrations": [],
+        "user_groups": []
+      }
+    ]
+  }
+}

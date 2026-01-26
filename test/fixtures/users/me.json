@@ -1,0 +1,32 @@
+{
+  "data": {
+    "user": {
+      "user_id": "user-123",
+      "email": "john@example.com",
+      "name": "John Doe",
+      "num_transcripts": 42,
+      "recent_meeting": "2024-01-15T10:00:00.000Z",
+      "recent_transcript": "transcript-abc",
+      "minutes_consumed": 1250,
+      "is_admin": true,
+      "integrations": ["google_calendar", "zoom"],
+      "user_groups": [
+        {
+          "id": "group-1",
+          "name": "Engineering",
+          "handle": "engineering",
+          "members": [
+            {
+              "user_id": "user-123",
+              "email": "john@example.com"
+            },
+            {
+              "user_id": "user-456",
+              "email": "jane@example.com"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

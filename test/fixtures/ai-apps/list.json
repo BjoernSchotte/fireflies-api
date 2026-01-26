@@ -1,0 +1,26 @@
+{
+  "data": {
+    "apps": {
+      "outputs": [
+        {
+          "transcript_id": "transcript-abc",
+          "user_id": "user-123",
+          "app_id": "app-summary",
+          "created_at": "2024-01-15T12:00:00.000Z",
+          "title": "Meeting Summary",
+          "prompt": "Summarize this meeting",
+          "response": "The team discussed API design and agreed on using GraphQL."
+        },
+        {
+          "transcript_id": "transcript-abc",
+          "user_id": "user-123",
+          "app_id": "app-action-items",
+          "created_at": "2024-01-15T12:01:00.000Z",
+          "title": "Action Items",
+          "prompt": "Extract action items from this meeting",
+          "response": "1. Implement GraphQL endpoint\n2. Write documentation"
+        }
+      ]
+    }
+  }
+}

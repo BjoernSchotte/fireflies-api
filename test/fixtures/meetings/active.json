@@ -1,0 +1,26 @@
+{
+  "data": {
+    "active_meetings": [
+      {
+        "id": "meeting-1",
+        "title": "Sales Call",
+        "organizer_email": "john@example.com",
+        "meeting_link": "https://zoom.us/j/123456",
+        "start_time": "2024-01-15T14:00:00.000Z",
+        "end_time": null,
+        "privacy": "team",
+        "state": "active"
+      },
+      {
+        "id": "meeting-2",
+        "title": "Engineering Sync",
+        "organizer_email": "jane@example.com",
+        "meeting_link": "https://meet.google.com/abc-def-ghi",
+        "start_time": "2024-01-15T14:30:00.000Z",
+        "end_time": null,
+        "privacy": "private",
+        "state": "paused"
+      }
+    ]
+  }
+}
