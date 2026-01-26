@@ -38,6 +38,12 @@ export {
   findExternalParticipantQuestions,
 } from './helpers/external-questions.js';
 export {
+  type ChunksExportOptions,
+  chunksToMarkdown,
+  type MarkdownExportOptions,
+  transcriptToMarkdown,
+} from './helpers/markdown.js';
+export {
   getMeetingsForMultipleUsers,
   type MultiUserOptions,
   type MultiUserTranscript,
