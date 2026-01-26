@@ -247,6 +247,7 @@ Native `fetch` for GraphQL - zero runtime deps for GraphQL-only users who tree-s
 ```json
 {
   "devDependencies": {
+    "@biomejs/biome": "^2.x",
     "tsup": "^8.x",
     "typescript": "^5.x",
     "vitest": "^2.x"
