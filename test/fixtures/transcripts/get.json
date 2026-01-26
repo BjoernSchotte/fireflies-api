@@ -1,0 +1,148 @@
+{
+  "data": {
+    "transcript": {
+      "id": "transcript-1",
+      "title": "Weekly Team Standup",
+      "organizer_email": "organizer@example.com",
+      "host_email": "organizer@example.com",
+      "user": {
+        "user_id": "user-123",
+        "email": "organizer@example.com",
+        "name": "Test User"
+      },
+      "speakers": [
+        { "id": "speaker-1", "name": "Alice" },
+        { "id": "speaker-2", "name": "Bob" }
+      ],
+      "transcript_url": "https://app.fireflies.ai/view/transcript-1",
+      "participants": ["alice@example.com", "bob@example.com"],
+      "meeting_attendees": [
+        {
+          "displayName": "Alice Smith",
+          "email": "alice@example.com",
+          "phoneNumber": null,
+          "name": "Alice Smith",
+          "location": null
+        },
+        {
+          "displayName": "Bob Jones",
+          "email": "bob@example.com",
+          "phoneNumber": null,
+          "name": "Bob Jones",
+          "location": null
+        }
+      ],
+      "meeting_attendance": [
+        {
+          "name": "Alice Smith",
+          "join_time": "2024-01-15T10:00:00.000Z",
+          "leave_time": "2024-01-15T10:30:00.000Z"
+        },
+        {
+          "name": "Bob Jones",
+          "join_time": "2024-01-15T10:01:00.000Z",
+          "leave_time": "2024-01-15T10:30:00.000Z"
+        }
+      ],
+      "fireflies_users": ["user-123"],
+      "workspace_users": ["user-123", "user-456"],
+      "duration": 1800,
+      "dateString": "2024-01-15T10:00:00.000Z",
+      "date": 1705312800000,
+      "audio_url": "https://storage.example.com/audio/transcript-1.mp3",
+      "video_url": null,
+      "sentences": [
+        {
+          "index": 0,
+          "text": "Good morning everyone.",
+          "raw_text": "Good morning everyone.",
+          "start_time": "0.00",
+          "end_time": "1.50",
+          "speaker_id": "speaker-1",
+          "speaker_name": "Alice",
+          "ai_filters": {
+            "task": null,
+            "pricing": null,
+            "metric": null,
+            "question": null,
+            "date_and_time": null,
+            "text_cleanup": "Good morning everyone.",
+            "sentiment": "positive"
+          }
+        },
+        {
+          "index": 1,
+          "text": "Let's go through our updates.",
+          "raw_text": "Let's go through our updates.",
+          "start_time": "1.50",
+          "end_time": "3.20",
+          "speaker_id": "speaker-1",
+          "speaker_name": "Alice",
+          "ai_filters": null
+        },
+        {
+          "index": 2,
+          "text": "I finished the API integration yesterday.",
+          "raw_text": "I finished the API integration yesterday.",
+          "start_time": "3.50",
+          "end_time": "6.00",
+          "speaker_id": "speaker-2",
+          "speaker_name": "Bob",
+          "ai_filters": {
+            "task": "finished the API integration",
+            "pricing": null,
+            "metric": null,
+            "question": null,
+            "date_and_time": "yesterday",
+            "text_cleanup": "I finished the API integration yesterday.",
+            "sentiment": "positive"
+          }
+        }
+      ],
+      "calendar_id": "cal-abc123",
+      "summary": {
+        "action_items": "- Complete API documentation\n- Review pull request",
+        "keywords": "API, integration, standup, updates",
+        "outline": "1. Team introductions\n2. Progress updates\n3. Blockers",
+        "overview": "Weekly team standup meeting to discuss progress and blockers.",
+        "shorthand_bullet": "- API integration completed\n- Documentation in progress",
+        "notes": "Meeting went well. Team is on track for the sprint.",
+        "gist": "Weekly standup covering API integration progress.",
+        "bullet_gist": "- API integration done\n- No blockers",
+        "short_summary": "Team discussed API integration progress.",
+        "short_overview": "Weekly standup meeting.",
+        "meeting_type": "standup",
+        "topics_discussed": ["API integration", "documentation", "sprint progress"],
+        "transcript_chapters": ["Introduction", "Updates", "Next Steps"]
+      },
+      "meeting_info": {
+        "fred_joined": true,
+        "silent_meeting": false,
+        "summary_status": "processed"
+      },
+      "cal_id": "cal-abc123",
+      "calendar_type": "google",
+      "apps_preview": {
+        "outputs": [
+          {
+            "app_id": "app-1",
+            "app_name": "Summary Generator",
+            "content": "Meeting summary content here",
+            "created_at": "2024-01-15T10:35:00.000Z"
+          }
+        ]
+      },
+      "meeting_link": "https://meet.google.com/abc-defg-hij",
+      "channels": [
+        {
+          "id": "channel-1",
+          "title": "Engineering",
+          "is_private": false,
+          "created_at": "2024-01-01T00:00:00.000Z",
+          "updated_at": "2024-01-15T10:35:00.000Z",
+          "created_by": "user-123"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "data": {
+    "transcripts": [
+      {
+        "id": "transcript-1",
+        "title": "Weekly Team Standup",
+        "organizer_email": "organizer@example.com",
+        "transcript_url": "https://app.fireflies.ai/view/transcript-1",
+        "participants": ["alice@example.com", "bob@example.com"],
+        "duration": 1800,
+        "dateString": "2024-01-15T10:00:00.000Z",
+        "date": 1705312800000,
+        "meeting_info": {
+          "fred_joined": true,
+          "silent_meeting": false,
+          "summary_status": "processed"
+        }
+      },
+      {
+        "id": "transcript-2",
+        "title": "Product Planning",
+        "organizer_email": "pm@example.com",
+        "transcript_url": "https://app.fireflies.ai/view/transcript-2",
+        "participants": ["alice@example.com", "charlie@example.com"],
+        "duration": 3600,
+        "dateString": "2024-01-14T14:00:00.000Z",
+        "date": 1705240800000,
+        "meeting_info": {
+          "fred_joined": true,
+          "silent_meeting": false,
+          "summary_status": "processed"
+        }
+      }
+    ]
+  }
+}

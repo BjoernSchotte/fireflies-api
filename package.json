@@ -1,0 +1,51 @@
+{
+  "name": "fireflies-api",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TypeScript SDK for Fireflies.ai API with Realtime WebSocket support",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "LIVE_TEST=1 vitest run --config vitest.live.config.ts",
+    "check": "biome check .",
+    "fix": "biome check --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "fireflies",
+    "fireflies.ai",
+    "transcription",
+    "meeting",
+    "api",
+    "sdk",
+    "realtime",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "msw": "^2.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}
