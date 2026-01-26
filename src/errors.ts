@@ -149,6 +149,30 @@ export class StreamClosedError extends RealtimeError {
 }
 
 /**
+ * Thrown when webhook signature verification fails.
+ */
+export class WebhookVerificationError extends FirefliesError {
+  override readonly code = 'WEBHOOK_VERIFICATION_FAILED';
+
+  constructor(message: string) {
+    super(message, { status: 401 });
+    this.name = 'WebhookVerificationError';
+  }
+}
+
+/**
+ * Thrown when webhook payload parsing fails.
+ */
+export class WebhookParseError extends FirefliesError {
+  override readonly code = 'WEBHOOK_PARSE_FAILED';
+
+  constructor(message: string) {
+    super(message, { status: 400 });
+    this.name = 'WebhookParseError';
+  }
+}
+
+/**
  * Thrown when no chunks received for configured timeout.
  * Consumer should check if meeting is still active and decide whether to reconnect.
  */

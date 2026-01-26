@@ -16,6 +16,8 @@ export {
   StreamClosedError,
   TimeoutError,
   ValidationError,
+  WebhookParseError,
+  WebhookVerificationError,
 } from './errors.js';
 
 // API interfaces
@@ -122,3 +124,14 @@ export type {
 
 // Utilities
 export { Deduplicator } from './utils/dedup.js';
+
+// Webhooks
+export {
+  isValidWebhookPayload,
+  type ParseOptions,
+  parseWebhookPayload,
+  type VerifyOptions,
+  verifyWebhookSignature,
+  type WebhookEventType,
+  type WebhookPayload,
+} from './webhooks/index.js';
