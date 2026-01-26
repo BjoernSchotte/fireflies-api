@@ -27,6 +27,7 @@ const TRANSCRIPT_FIELDS = `
     user_id
     email
     name
+    plan
   }
   speakers {
     id
@@ -120,6 +121,11 @@ const TRANSCRIPT_FIELDS = `
     created_at
     updated_at
     created_by
+    members {
+      user_id
+      email
+      name
+    }
   }
 `;
 
