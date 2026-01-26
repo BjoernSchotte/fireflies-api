@@ -1,0 +1,191 @@
+{
+  "data": {
+    "transcript": {
+      "id": "transcript-with-questions",
+      "title": "Sales Call with Prospect",
+      "organizer_email": "sales@internal.com",
+      "host_email": "sales@internal.com",
+      "user": {
+        "user_id": "user-123",
+        "email": "sales@internal.com",
+        "name": "Sales Rep"
+      },
+      "speakers": [
+        { "id": "speaker-1", "name": "Sales Rep" },
+        { "id": "speaker-2", "name": "Client Contact" }
+      ],
+      "transcript_url": "https://app.fireflies.ai/view/transcript-with-questions",
+      "participants": ["sales@internal.com", "client@external.com"],
+      "meeting_attendees": [
+        {
+          "displayName": "Sales Rep",
+          "email": "sales@internal.com",
+          "phoneNumber": null,
+          "name": "Sales Rep",
+          "location": null
+        },
+        {
+          "displayName": "Client Contact",
+          "email": "client@external.com",
+          "phoneNumber": null,
+          "name": "Client Contact",
+          "location": null
+        }
+      ],
+      "meeting_attendance": [
+        {
+          "name": "Sales Rep",
+          "join_time": "2024-01-20T14:00:00.000Z",
+          "leave_time": "2024-01-20T14:45:00.000Z"
+        },
+        {
+          "name": "Client Contact",
+          "join_time": "2024-01-20T14:00:30.000Z",
+          "leave_time": "2024-01-20T14:45:00.000Z"
+        }
+      ],
+      "fireflies_users": ["user-123"],
+      "workspace_users": ["user-123"],
+      "duration": 2700,
+      "dateString": "2024-01-20T14:00:00.000Z",
+      "date": 1705759200000,
+      "audio_url": "https://storage.example.com/audio/transcript-with-questions.mp3",
+      "video_url": "https://storage.example.com/video/transcript-with-questions.mp4",
+      "sentences": [
+        {
+          "index": 0,
+          "text": "Thanks for joining the call today.",
+          "raw_text": "Thanks for joining the call today.",
+          "start_time": "0.00",
+          "end_time": "2.50",
+          "speaker_id": "speaker-1",
+          "speaker_name": "Sales Rep",
+          "ai_filters": {
+            "task": null,
+            "pricing": null,
+            "metric": null,
+            "question": null,
+            "date_and_time": "today",
+            "text_cleanup": "Thanks for joining the call today.",
+            "sentiment": "positive"
+          }
+        },
+        {
+          "index": 1,
+          "text": "What pricing tiers do you offer?",
+          "raw_text": "What pricing tiers do you offer?",
+          "start_time": "5.00",
+          "end_time": "7.50",
+          "speaker_id": "speaker-2",
+          "speaker_name": "Client Contact",
+          "ai_filters": {
+            "task": null,
+            "pricing": "pricing tiers",
+            "metric": null,
+            "question": "What pricing tiers do you offer?",
+            "date_and_time": null,
+            "text_cleanup": "What pricing tiers do you offer?",
+            "sentiment": "neutral"
+          }
+        },
+        {
+          "index": 2,
+          "text": "We have three tiers: starter, pro, and enterprise.",
+          "raw_text": "We have three tiers: starter, pro, and enterprise.",
+          "start_time": "8.00",
+          "end_time": "12.00",
+          "speaker_id": "speaker-1",
+          "speaker_name": "Sales Rep",
+          "ai_filters": {
+            "task": null,
+            "pricing": "starter, pro, and enterprise",
+            "metric": null,
+            "question": null,
+            "date_and_time": null,
+            "text_cleanup": "We have three tiers: starter, pro, and enterprise.",
+            "sentiment": "neutral"
+          }
+        },
+        {
+          "index": 3,
+          "text": "How long does implementation typically take?",
+          "raw_text": "How long does implementation typically take?",
+          "start_time": "15.00",
+          "end_time": "18.00",
+          "speaker_id": "speaker-2",
+          "speaker_name": "Client Contact",
+          "ai_filters": {
+            "task": null,
+            "pricing": null,
+            "metric": null,
+            "question": "How long does implementation typically take?",
+            "date_and_time": null,
+            "text_cleanup": "How long does implementation typically take?",
+            "sentiment": "neutral"
+          }
+        },
+        {
+          "index": 4,
+          "text": "Can you provide customer references?",
+          "raw_text": "Can you provide customer references?",
+          "start_time": "25.00",
+          "end_time": "28.00",
+          "speaker_id": "speaker-2",
+          "speaker_name": "Client Contact",
+          "ai_filters": {
+            "task": null,
+            "pricing": null,
+            "metric": null,
+            "question": "Can you provide customer references?",
+            "date_and_time": null,
+            "text_cleanup": "Can you provide customer references?",
+            "sentiment": "neutral"
+          }
+        },
+        {
+          "index": 5,
+          "text": "What are your security certifications?",
+          "raw_text": "What are your security certifications?",
+          "start_time": "30.00",
+          "end_time": "33.00",
+          "speaker_id": "speaker-1",
+          "speaker_name": "Sales Rep",
+          "ai_filters": {
+            "task": null,
+            "pricing": null,
+            "metric": null,
+            "question": "What are your security certifications?",
+            "date_and_time": null,
+            "text_cleanup": "What are your security certifications?",
+            "sentiment": "neutral"
+          }
+        }
+      ],
+      "calendar_id": "cal-sales-123",
+      "summary": {
+        "action_items": "- Send pricing proposal\n- Share customer references\n- Schedule follow-up call",
+        "keywords": "pricing, implementation, security, enterprise",
+        "outline": "1. Introduction\n2. Product overview\n3. Pricing discussion\n4. Q&A",
+        "overview": "Sales call with prospect discussing pricing and implementation.",
+        "shorthand_bullet": "- Discussed pricing tiers\n- Implementation timeline questions\n- Security certifications",
+        "notes": "Prospect interested in enterprise tier. Need to send proposal.",
+        "gist": "Sales call covering pricing and implementation.",
+        "bullet_gist": "- Pricing discussed\n- Implementation questions",
+        "short_summary": "Sales discussion with prospect about enterprise solution.",
+        "short_overview": "Sales call with prospect.",
+        "meeting_type": "sales_call",
+        "topics_discussed": ["pricing", "implementation", "security", "references"],
+        "transcript_chapters": ["Introduction", "Pricing", "Q&A", "Next Steps"]
+      },
+      "meeting_info": {
+        "fred_joined": true,
+        "silent_meeting": false,
+        "summary_status": "processed"
+      },
+      "cal_id": "cal-sales-123",
+      "calendar_type": "google",
+      "meeting_link": "https://meet.google.com/sales-call-123",
+      "channels": []
+    }
+  }
+}

@@ -48,6 +48,20 @@ npm run fix        # Auto-fix lint + format with biome
 npm run typecheck  # TypeScript type checking
 ```
 
+## Live E2E Tests
+
+After implementing new features, run non-destructive live E2E tests against the real Fireflies API:
+
+```bash
+# Ensure .env contains FIREFLIES_API_KEY (user provides their key)
+export $(grep -v '^#' .env | xargs) && LIVE_TEST=1 npm run test:live
+```
+
+**Requirements:**
+- `.env` file with `FIREFLIES_API_KEY=your-api-key`
+- Tests are READ-ONLY: only list/get operations, never create/update/delete
+- Some tests may be skipped based on account plan (e.g., video requires Business+)
+
 ## Architecture
 
 **Two API surfaces:**

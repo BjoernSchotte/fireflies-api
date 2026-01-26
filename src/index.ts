@@ -29,7 +29,19 @@ export type { TranscriptsAPI } from './graphql/queries/transcripts.js';
 export type { UsersAPI } from './graphql/queries/users.js';
 
 // Helpers
+export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
+export {
+  type ExternalQuestion,
+  type ExternalQuestionsResult,
+  findExternalParticipantQuestions,
+} from './helpers/external-questions.js';
+export {
+  getMeetingsForMultipleUsers,
+  type MultiUserOptions,
+  type MultiUserTranscript,
+} from './helpers/multi-user.js';
 export { collectAll, paginate } from './helpers/pagination.js';
+export { getMeetingVideos, hasVideo, type TranscriptWithVideo } from './helpers/videos.js';
 
 // Realtime
 export type { RealtimeAPI } from './realtime/api.js';

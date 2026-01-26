@@ -254,13 +254,31 @@ describe('RealtimeStream integration', () => {
 
       // Send progressive updates (same chunk_id, growing text)
       socket?.emit('transcription.broadcast', {
-        payload: { chunk_id: 'chunk-1', speaker_name: 'Speaker', text: 'Hello', start_time: 0, end_time: 1 },
+        payload: {
+          chunk_id: 'chunk-1',
+          speaker_name: 'Speaker',
+          text: 'Hello',
+          start_time: 0,
+          end_time: 1,
+        },
       });
       socket?.emit('transcription.broadcast', {
-        payload: { chunk_id: 'chunk-1', speaker_name: 'Speaker', text: 'Hello world', start_time: 0, end_time: 2 },
+        payload: {
+          chunk_id: 'chunk-1',
+          speaker_name: 'Speaker',
+          text: 'Hello world',
+          start_time: 0,
+          end_time: 2,
+        },
       });
       socket?.emit('transcription.broadcast', {
-        payload: { chunk_id: 'chunk-2', speaker_name: 'Speaker', text: 'New', start_time: 2, end_time: 3 },
+        payload: {
+          chunk_id: 'chunk-2',
+          speaker_name: 'Speaker',
+          text: 'New',
+          start_time: 2,
+          end_time: 3,
+        },
       });
 
       await new Promise((r) => setTimeout(r, 50));
