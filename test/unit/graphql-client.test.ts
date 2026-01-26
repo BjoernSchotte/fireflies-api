@@ -468,6 +468,33 @@ describe('GraphQLClient', () => {
       expect(onWarning).toHaveBeenCalledTimes(1);
     });
 
+    it('invokes onWarning again after rate limit recovery and re-drop', async () => {
+      const remainingValues = [5, 60, 8]; // low -> recovered -> low again
+      let callIndex = 0;
+      server.use(
+        http.post(API_URL, () => {
+          const remaining = remainingValues[callIndex % remainingValues.length];
+          callIndex++;
+          return HttpResponse.json(
+            { data: {} },
+            { headers: { 'x-ratelimit-remaining-api': String(remaining) } }
+          );
+        })
+      );
+
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}'); // remaining=5, warns (first time below threshold)
+      await client.execute('query {}'); // remaining=60, above threshold, no warning
+      await client.execute('query {}'); // remaining=8, below threshold again, should warn
+
+      expect(onWarning).toHaveBeenCalledTimes(2);
+    });
+
     it('invokes onRateLimited on 429 response', async () => {
       server.use(
         http.post(API_URL, () => {
@@ -522,6 +549,29 @@ describe('GraphQLClient', () => {
       // Should not throw despite callback error
       const result = await client.execute<{ result: string }>('query {}');
       expect(result).toEqual({ result: 'ok' });
+    });
+
+    it('invokes onWarning even if onUpdate throws', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json({ data: {} }, { headers: { 'x-ratelimit-remaining-api': '5' } });
+        })
+      );
+
+      const onUpdate = vi.fn(() => {
+        throw new Error('onUpdate error');
+      });
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onUpdate, onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}');
+
+      // Both should be called, even though onUpdate throws
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(onWarning).toHaveBeenCalledTimes(1);
     });
   });
 });

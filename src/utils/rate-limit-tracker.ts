@@ -112,7 +112,8 @@ export class RateLimitTracker {
       return 0;
     }
 
-    const startThreshold = config.startThreshold ?? 20;
+    // Ensure startThreshold is at least 1 to avoid division issues and silent disabling
+    const startThreshold = Math.max(1, config.startThreshold ?? 20);
     let minDelay = config.minDelay ?? 100;
     let maxDelay = config.maxDelay ?? 2000;
 

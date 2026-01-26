@@ -346,5 +346,35 @@ describe('RateLimitTracker', () => {
       // ratio = 0.5, delay = 100 + 0.5 * 1900 = 1050
       expect(tracker.getThrottleDelay(config)).toBe(1050);
     });
+
+    it('enforces minimum startThreshold of 1 when set to 0', () => {
+      const tracker = new RateLimitTracker();
+      tracker.update({ 'x-ratelimit-remaining-api': '0' });
+
+      // startThreshold=0 should be treated as 1
+      const config = {
+        enabled: true,
+        startThreshold: 0,
+        maxDelay: 2000,
+      };
+
+      // With threshold=1, remaining=0 means 0 < 1, so we get maxDelay
+      expect(tracker.getThrottleDelay(config)).toBe(2000);
+    });
+
+    it('enforces minimum startThreshold of 1 when set to negative', () => {
+      const tracker = new RateLimitTracker();
+      tracker.update({ 'x-ratelimit-remaining-api': '0' });
+
+      // startThreshold=-5 should be treated as 1
+      const config = {
+        enabled: true,
+        startThreshold: -5,
+        maxDelay: 2000,
+      };
+
+      // With threshold=1, remaining=0 means 0 < 1, so we get maxDelay
+      expect(tracker.getThrottleDelay(config)).toBe(2000);
+    });
   });
 });
