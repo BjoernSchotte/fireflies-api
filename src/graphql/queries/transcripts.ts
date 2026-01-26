@@ -1,5 +1,5 @@
 import { paginate } from '../../helpers/pagination.js';
-import type { TranscriptsListParams } from '../../types/params.js';
+import type { TranscriptGetParams, TranscriptsListParams } from '../../types/params.js';
 import type {
   AppsPreview,
   Channel,
@@ -16,9 +16,9 @@ import type {
 import type { GraphQLClient } from '../client.js';
 
 /**
- * GraphQL fragment for full transcript fields.
+ * GraphQL fragment for base transcript fields (excludes sentences and summary).
  */
-const TRANSCRIPT_FIELDS = `
+const TRANSCRIPT_BASE_FIELDS = `
   id
   title
   organizer_email
@@ -54,44 +54,7 @@ const TRANSCRIPT_FIELDS = `
   date
   audio_url
   video_url
-  sentences {
-    index
-    text
-    raw_text
-    start_time
-    end_time
-    speaker_id
-    speaker_name
-    ai_filters {
-      task
-      pricing
-      metric
-      question
-      date_and_time
-      text_cleanup
-      sentiment
-    }
-  }
   calendar_id
-  summary {
-    action_items
-    keywords
-    outline
-    overview
-    shorthand_bullet
-    notes
-    gist
-    bullet_gist
-    short_summary
-    short_overview
-    meeting_type
-    topics_discussed
-    transcript_chapters
-    extended_sections {
-      title
-      content
-    }
-  }
   meeting_info {
     fred_joined
     silent_meeting
@@ -130,6 +93,72 @@ const TRANSCRIPT_FIELDS = `
 `;
 
 /**
+ * GraphQL fragment for sentences field.
+ */
+const SENTENCES_FIELDS = `
+  sentences {
+    index
+    text
+    raw_text
+    start_time
+    end_time
+    speaker_id
+    speaker_name
+    ai_filters {
+      task
+      pricing
+      metric
+      question
+      date_and_time
+      text_cleanup
+      sentiment
+    }
+  }
+`;
+
+/**
+ * GraphQL fragment for summary field.
+ */
+const SUMMARY_FIELDS = `
+  summary {
+    action_items
+    keywords
+    outline
+    overview
+    shorthand_bullet
+    notes
+    gist
+    bullet_gist
+    short_summary
+    short_overview
+    meeting_type
+    topics_discussed
+    transcript_chapters
+    extended_sections {
+      title
+      content
+    }
+  }
+`;
+
+/**
+ * Build transcript fields based on options.
+ */
+function buildTranscriptFields(params?: TranscriptGetParams): string {
+  const includeSentences = params?.includeSentences !== false;
+  const includeSummary = params?.includeSummary !== false;
+
+  let fields = TRANSCRIPT_BASE_FIELDS;
+  if (includeSentences) {
+    fields += SENTENCES_FIELDS;
+  }
+  if (includeSummary) {
+    fields += SUMMARY_FIELDS;
+  }
+  return fields;
+}
+
+/**
  * GraphQL fragment for transcript list fields (lighter weight).
  */
 const TRANSCRIPT_LIST_FIELDS = `
@@ -156,10 +185,23 @@ export interface TranscriptsAPI {
    * Get a single transcript by ID.
    *
    * @param id - Transcript ID
-   * @returns Full transcript with all fields
+   * @param params - Optional parameters to exclude heavy fields
+   * @returns Transcript (fields depend on params)
    * @throws NotFoundError if transcript doesn't exist
+   *
+   * @example
+   * ```typescript
+   * // Full transcript with all fields
+   * const full = await client.transcripts.get('id');
+   *
+   * // Metadata only (faster, smaller response)
+   * const meta = await client.transcripts.get('id', {
+   *   includeSentences: false,
+   *   includeSummary: false,
+   * });
+   * ```
    */
-  get(id: string): Promise<Transcript>;
+  get(id: string, params?: TranscriptGetParams): Promise<Transcript>;
 
   /**
    * List transcripts with optional filtering.
@@ -200,11 +242,12 @@ export interface TranscriptsAPI {
  */
 export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
   return {
-    async get(id: string): Promise<Transcript> {
+    async get(id: string, params?: TranscriptGetParams): Promise<Transcript> {
+      const fields = buildTranscriptFields(params);
       const query = `
         query GetTranscript($id: String!) {
           transcript(id: $id) {
-            ${TRANSCRIPT_FIELDS}
+            ${fields}
           }
         }
       `;

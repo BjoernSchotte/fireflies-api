@@ -131,6 +131,99 @@ describe('transcripts.get', () => {
     expect(transcript.sentences).toEqual([]);
     expect(transcript.channels).toEqual([]);
   });
+
+  it('excludes sentences when includeSentences is false', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcript: {
+              id: 'transcript-1',
+              title: 'Test',
+              organizer_email: 'test@example.com',
+              transcript_url: 'https://example.com',
+              duration: 100,
+              dateString: '2024-01-01',
+              date: 1704067200000,
+            },
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.get('transcript-1', { includeSentences: false });
+
+    expect(receivedQuery).not.toContain('sentences {');
+    expect(receivedQuery).toContain('summary {');
+  });
+
+  it('excludes summary when includeSummary is false', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcript: {
+              id: 'transcript-1',
+              title: 'Test',
+              organizer_email: 'test@example.com',
+              transcript_url: 'https://example.com',
+              duration: 100,
+              dateString: '2024-01-01',
+              date: 1704067200000,
+            },
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.get('transcript-1', { includeSummary: false });
+
+    expect(receivedQuery).toContain('sentences {');
+    expect(receivedQuery).not.toContain('summary {');
+  });
+
+  it('excludes both when both options are false', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcript: {
+              id: 'transcript-1',
+              title: 'Test',
+              organizer_email: 'test@example.com',
+              transcript_url: 'https://example.com',
+              duration: 100,
+              dateString: '2024-01-01',
+              date: 1704067200000,
+            },
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.get('transcript-1', {
+      includeSentences: false,
+      includeSummary: false,
+    });
+
+    expect(receivedQuery).not.toContain('sentences {');
+    expect(receivedQuery).not.toContain('summary {');
+  });
 });
 
 describe('transcripts.getSummary', () => {
