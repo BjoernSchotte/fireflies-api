@@ -1,5 +1,6 @@
 import { GraphQLClient } from './graphql/client.js';
 import { createTranscriptsAPI, type TranscriptsAPI } from './graphql/queries/transcripts.js';
+import { createRealtimeAPI, type RealtimeAPI } from './realtime/api.js';
 import type { FirefliesConfig } from './types/config.js';
 
 /**
@@ -32,6 +33,11 @@ export class FirefliesClient {
   readonly transcripts: TranscriptsAPI;
 
   /**
+   * Realtime transcription streaming.
+   */
+  readonly realtime: RealtimeAPI;
+
+  /**
    * Create a new Fireflies client.
    *
    * @param config - Client configuration
@@ -40,5 +46,6 @@ export class FirefliesClient {
   constructor(config: FirefliesConfig) {
     const graphql = new GraphQLClient(config);
     this.transcripts = createTranscriptsAPI(graphql);
+    this.realtime = createRealtimeAPI(config.apiKey);
   }
 }

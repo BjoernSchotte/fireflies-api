@@ -112,6 +112,57 @@ export class NetworkError extends FirefliesError {
 }
 
 /**
+ * Base error for realtime operations.
+ */
+export class RealtimeError extends FirefliesError {
+  override readonly code: string = 'REALTIME_ERROR';
+
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'RealtimeError';
+  }
+}
+
+/**
+ * Thrown when realtime connection fails.
+ */
+export class ConnectionError extends RealtimeError {
+  override readonly code = 'CONNECTION_ERROR';
+
+  constructor(message = 'Failed to establish realtime connection', options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'ConnectionError';
+  }
+}
+
+/**
+ * Thrown when stream is accessed after close.
+ */
+export class StreamClosedError extends RealtimeError {
+  override readonly code = 'STREAM_CLOSED';
+
+  constructor(message = 'Stream has been closed') {
+    super(message);
+    this.name = 'StreamClosedError';
+  }
+}
+
+/**
+ * Thrown when no chunks received for configured timeout.
+ * Consumer should check if meeting is still active and decide whether to reconnect.
+ */
+export class ChunkTimeoutError extends RealtimeError {
+  override readonly code = 'CHUNK_TIMEOUT';
+  readonly timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    super(`No chunks received for ${timeoutMs}ms`);
+    this.name = 'ChunkTimeoutError';
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+/**
  * Parse error response and return appropriate error class.
  */
 export function parseErrorResponse(

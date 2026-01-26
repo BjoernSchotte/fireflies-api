@@ -40,10 +40,13 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "socket.io-client": "^4.8.3"
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
     "msw": "^2.0.0",
+    "socket.io": "^4.8.3",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
