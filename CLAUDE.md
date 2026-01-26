@@ -42,4 +42,7 @@ Events: `connect` → `auth.success` → `connection.established` → `transcrip
 
 **Helpers** in `src/helpers/`: convenience features like multi-user fetch with deduplication, auto-pagination.
 
-See `specs/ARCHITECTURE.md` for full design specification.
+## Key Documentation
+
+- `specs/ARCHITECTURE.md` - Full design specification and API design
+- `specs/ROADMAP.md` - **Authoritative roadmap** with milestones (vertical slices)
