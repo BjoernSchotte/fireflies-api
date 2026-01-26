@@ -100,9 +100,9 @@ export function calculateDelay(
   baseDelay: number,
   maxDelay: number
 ): number {
-  // Use rate limit's retryAfter if available
+  // Use rate limit's retryAfter if available (already in milliseconds)
   if (error instanceof RateLimitError && error.retryAfter !== undefined) {
-    return Math.min(error.retryAfter * 1000, maxDelay);
+    return Math.min(error.retryAfter, maxDelay);
   }
 
   // Exponential backoff with jitter

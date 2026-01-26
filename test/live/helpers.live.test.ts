@@ -51,7 +51,10 @@ describe.skipIf(!SHOULD_RUN)('helpers (live)', () => {
 
       // Use a domain that's unlikely to match any real participants
       // This tests the function works without needing to know actual domains
-      const result = findExternalParticipantQuestions(transcript, '@unlikely-test-domain-12345.com');
+      const result = findExternalParticipantQuestions(
+        transcript,
+        '@unlikely-test-domain-12345.com'
+      );
 
       expect(result).toBeDefined();
       expect(typeof result.totalQuestions).toBe('number');
@@ -59,7 +62,9 @@ describe.skipIf(!SHOULD_RUN)('helpers (live)', () => {
       expect(Array.isArray(result.externalParticipants)).toBe(true);
 
       // Since we used a fake domain, all participants should be "external"
-      console.log(`Found ${result.totalQuestions} questions from ${result.externalParticipants.length} external participants`);
+      console.log(
+        `Found ${result.totalQuestions} questions from ${result.externalParticipants.length} external participants`
+      );
 
       // Verify question structure if any exist
       for (const q of result.questions) {
@@ -108,33 +113,33 @@ describe.skipIf(!SHOULD_RUN)('helpers (live)', () => {
 
   describe('getMeetingVideos', () => {
     it('iterates through transcripts with video URLs', async () => {
-        // First check if any transcripts have videos using a quick list query
-        const transcripts = await client.transcripts.list({ limit: 10 });
-        const hasAnyVideos = transcripts.some((t) => hasVideo(t));
+      // First check if any transcripts have videos using a quick list query
+      const transcripts = await client.transcripts.list({ limit: 10 });
+      const hasAnyVideos = transcripts.some((t) => hasVideo(t));
 
-        if (!hasAnyVideos) {
-          console.log('No transcripts with video found (requires Business plan or higher)');
-          console.log('Skipping getMeetingVideos iteration test');
-          return;
-        }
+      if (!hasAnyVideos) {
+        console.log('No transcripts with video found (requires Business plan or higher)');
+        console.log('Skipping getMeetingVideos iteration test');
+        return;
+      }
 
-        let count = 0;
-        const maxCount = 3;
+      let count = 0;
+      const maxCount = 3;
 
-        for await (const { transcript, videoUrl } of getMeetingVideos(client)) {
-          expect(transcript).toBeDefined();
-          expect(typeof videoUrl).toBe('string');
-          expect(videoUrl.length).toBeGreaterThan(0);
-          expect(hasVideo(transcript)).toBe(true);
+      for await (const { transcript, videoUrl } of getMeetingVideos(client)) {
+        expect(transcript).toBeDefined();
+        expect(typeof videoUrl).toBe('string');
+        expect(videoUrl.length).toBeGreaterThan(0);
+        expect(hasVideo(transcript)).toBe(true);
 
-          console.log(`Found video: ${transcript.title} -> ${videoUrl.substring(0, 50)}...`);
+        console.log(`Found video: ${transcript.title} -> ${videoUrl.substring(0, 50)}...`);
 
-          count++;
-          if (count >= maxCount) break;
-        }
+        count++;
+        if (count >= maxCount) break;
+      }
 
-        expect(count).toBeGreaterThan(0);
-      });
+      expect(count).toBeGreaterThan(0);
+    });
   });
 
   describe('hasVideo', () => {
@@ -204,20 +209,22 @@ describe.skipIf(!SHOULD_RUN)('helpers (live)', () => {
 
       const ids = transcripts.map((t) => t.id);
 
-      const fullTranscripts = await batchAll(ids, (id) => client.transcripts.get(id), {
-        delayMs: 200,
-      });
+      // Use includeSentences: false for faster fetches
+      const fullTranscripts = await batchAll(
+        ids,
+        (id) => client.transcripts.get(id, { includeSentences: false, includeSummary: false }),
+        { delayMs: 200 }
+      );
 
       expect(fullTranscripts.length).toBe(ids.length);
 
       for (const t of fullTranscripts) {
         expect(t.id).toBeDefined();
         expect(t.title).toBeDefined();
-        expect(Array.isArray(t.sentences)).toBe(true);
       }
 
       console.log(`Successfully fetched ${fullTranscripts.length} full transcripts`);
-    });
+    }, 60000);
 
     it('handles errors gracefully with continueOnError', async () => {
       // Mix valid and invalid IDs

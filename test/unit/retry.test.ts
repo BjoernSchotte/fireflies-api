@@ -127,15 +127,15 @@ describe('isRetryableError', () => {
 
 describe('calculateDelay', () => {
   it('uses retryAfter from RateLimitError when available', () => {
-    const error = new RateLimitError('Rate limited', 5); // 5 seconds
+    const error = new RateLimitError('Rate limited', 5000); // 5000ms
 
     const delay = calculateDelay(error, 0, 1000, 30000);
 
-    expect(delay).toBe(5000); // 5 seconds in ms
+    expect(delay).toBe(5000); // uses retryAfter directly (already in ms)
   });
 
   it('caps retryAfter at maxDelay', () => {
-    const error = new RateLimitError('Rate limited', 60); // 60 seconds
+    const error = new RateLimitError('Rate limited', 60000); // 60000ms
 
     const delay = calculateDelay(error, 0, 1000, 30000);
 

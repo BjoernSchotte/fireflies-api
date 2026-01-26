@@ -173,6 +173,7 @@ const TRANSCRIPT_LIST_FIELDS = `
   duration
   dateString
   date
+  video_url
   meeting_info {
     fred_joined
     silent_meeting

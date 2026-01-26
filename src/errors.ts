@@ -27,10 +27,11 @@ export class AuthenticationError extends FirefliesError {
 
 /**
  * Thrown when rate limits are exceeded.
- * Check retryAfter for suggested wait time.
+ * Check retryAfter for suggested wait time in milliseconds.
  */
 export class RateLimitError extends FirefliesError {
   override readonly code = 'RATE_LIMIT_ERROR';
+  /** Suggested wait time in milliseconds before retrying. */
   readonly retryAfter?: number;
 
   constructor(message = 'Rate limit exceeded', retryAfter?: number) {
