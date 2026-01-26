@@ -52,4 +52,24 @@ export function registerUsersCommand(program: Command): void {
         output(user, format);
       })
     );
+
+  cmd
+    .command('set-role <user-id>')
+    .description('Set user role (admin only)')
+    .requiredOption('--role <role>', 'Role: admin or user (required)')
+    .action(
+      withErrorHandling(async (userId: string, opts) => {
+        const role = opts.role;
+        if (role !== 'admin' && role !== 'user') {
+          console.error('Error: Role must be "admin" or "user"');
+          process.exit(1);
+        }
+
+        const client = getClient(program);
+        const format = getOutputFormat(program);
+
+        const result = await client.users.setRole(userId, role);
+        output(result, format);
+      })
+    );
 }

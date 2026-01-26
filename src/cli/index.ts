@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 import { registerAiAppsCommand } from './commands/ai-apps.js';
+import { registerAudioCommand } from './commands/audio.js';
 import { registerBitesCommand } from './commands/bites.js';
 import { registerExportCommand } from './commands/export.js';
 import { registerMeetingsCommand } from './commands/meetings.js';
@@ -39,6 +40,7 @@ registerMeetingsCommand(program);
 registerUsersCommand(program);
 registerBitesCommand(program);
 registerAiAppsCommand(program);
+registerAudioCommand(program);
 registerRealtimeCommand(program);
 registerExportCommand(program);
 

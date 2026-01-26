@@ -3,6 +3,42 @@ import { getClient, getOutputFormat } from '../utils/client.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output } from '../utils/output.js';
 
+type Privacy = 'public' | 'team' | 'participants';
+
+/**
+ * Collect repeatable privacy values.
+ */
+function collectPrivacies(value: string, previous: Privacy[]): Privacy[] {
+  const valid: Privacy[] = ['public', 'team', 'participants'];
+  if (!valid.includes(value as Privacy)) {
+    console.error(`Invalid privacy value: ${value}. Must be one of: ${valid.join(', ')}`);
+    process.exit(1);
+  }
+  return previous.concat([value as Privacy]);
+}
+
+/**
+ * Parse time string (supports seconds or MM:SS format).
+ */
+function parseTime(value: string): number {
+  if (value.includes(':')) {
+    const parts = value.split(':');
+    if (parts.length === 2) {
+      const [mins, secs] = parts;
+      return Number.parseInt(mins ?? '0', 10) * 60 + Number.parseFloat(secs ?? '0');
+    }
+    if (parts.length === 3) {
+      const [hours, mins, secs] = parts;
+      return (
+        Number.parseInt(hours ?? '0', 10) * 3600 +
+        Number.parseInt(mins ?? '0', 10) * 60 +
+        Number.parseFloat(secs ?? '0')
+      );
+    }
+  }
+  return Number.parseFloat(value);
+}
+
 export function registerBitesCommand(program: Command): void {
   const cmd = program.command('bites').description('Soundbites/clips');
 
@@ -49,6 +85,48 @@ export function registerBitesCommand(program: Command): void {
 
         const bite = await client.bites.get(id);
         output(bite, format);
+      })
+    );
+
+  cmd
+    .command('create')
+    .description('Create a bite/soundbite from a transcript')
+    .requiredOption('--transcript <id>', 'Transcript ID (required)')
+    .requiredOption('--start <time>', 'Start time in seconds or MM:SS format (required)')
+    .requiredOption('--end <time>', 'End time in seconds or MM:SS format (required)')
+    .option('--name <name>', 'Bite name (max 256 chars)')
+    .option('--media-type <type>', 'Media type: video or audio')
+    .option('--summary <text>', 'Summary (max 500 chars)')
+    .option(
+      '--privacy <level>',
+      'Privacy: public, team, or participants (repeatable)',
+      collectPrivacies,
+      []
+    )
+    .action(
+      withErrorHandling(async (opts) => {
+        const client = getClient(program);
+        const format = getOutputFormat(program);
+
+        const startTime = parseTime(opts.start);
+        const endTime = parseTime(opts.end);
+
+        if (endTime <= startTime) {
+          console.error('Error: End time must be greater than start time');
+          process.exit(1);
+        }
+
+        const result = await client.bites.create({
+          transcript_id: opts.transcript,
+          start_time: startTime,
+          end_time: endTime,
+          name: opts.name,
+          media_type: opts.mediaType,
+          summary: opts.summary,
+          privacies: opts.privacy.length > 0 ? opts.privacy : undefined,
+        });
+
+        output(result, format);
       })
     );
 }
