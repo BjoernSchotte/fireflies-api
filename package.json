@@ -16,6 +16,9 @@
   "files": [
     "dist"
   ],
+  "bin": {
+    "fireflies": "./dist/cli/index.js"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -43,6 +46,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "commander": "^13.0.0",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
