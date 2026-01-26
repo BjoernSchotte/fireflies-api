@@ -4,6 +4,13 @@ import { withErrorHandling } from '../utils/error.js';
 import { output } from '../utils/output.js';
 
 /**
+ * Collect repeatable option values into an array.
+ */
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
+/**
  * Calculate a date relative to today.
  */
 function daysAgo(days: number): string {
@@ -79,6 +86,11 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--days <n>', 'Transcripts from last N days')
     .option('--mine', 'Only my transcripts')
     .option('--keyword <text>', 'Search keyword')
+    .option('--scope <scope>', 'Search scope: title, sentences, all (default: all)')
+    .option('--organizer <email>', 'Filter by organizer email (repeatable)', collect, [])
+    .option('--participant <email>', 'Filter by participant email (repeatable)', collect, [])
+    .option('--user-id <id>', 'Filter by user ID')
+    .option('--channel <id>', 'Filter by channel ID')
     .action(
       withErrorHandling(async (opts) => {
         const client = getClient(program);
@@ -91,6 +103,11 @@ export function registerTranscriptsCommand(program: Command): void {
           toDate,
           mine: opts.mine,
           keyword: opts.keyword,
+          scope: opts.scope,
+          organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
+          participants: opts.participant.length > 0 ? opts.participant : undefined,
+          user_id: opts.userId,
+          channel_id: opts.channel,
         });
 
         const formatted = transcripts.map((t) => ({
