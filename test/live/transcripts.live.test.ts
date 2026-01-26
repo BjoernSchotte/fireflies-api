@@ -11,8 +11,8 @@ import { FirefliesClient } from '../../src/client.js';
  * Run with: npm run test:live
  */
 
-const API_KEY = process.env['FIREFLIES_API_KEY'];
-const SHOULD_RUN = process.env['LIVE_TEST'] === '1' && !!API_KEY;
+const API_KEY = process.env.FIREFLIES_API_KEY;
+const SHOULD_RUN = process.env.LIVE_TEST === '1' && !!API_KEY;
 
 describe.skipIf(!SHOULD_RUN)('transcripts (live)', () => {
   let client: FirefliesClient;

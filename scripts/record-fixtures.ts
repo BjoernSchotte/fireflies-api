@@ -25,7 +25,7 @@ async function graphqlRequest(
   query: string,
   variables?: Record<string, unknown>
 ): Promise<GraphQLResponse> {
-  const apiKey = process.env['FIREFLIES_API_KEY'];
+  const apiKey = process.env.FIREFLIES_API_KEY;
   if (!apiKey) {
     throw new Error('FIREFLIES_API_KEY environment variable is required');
   }
@@ -52,45 +52,45 @@ function redactEmail(email: string): string {
   return `${local.slice(0, 2)}***@${domain}`;
 }
 
-function redactString(str: string, replacement: string): string {
+function _redactString(str: string, replacement: string): string {
   return str ? replacement : str;
 }
 
 function redactTranscript(transcript: Record<string, unknown>): Record<string, unknown> {
   const redacted = { ...transcript };
 
-  if (typeof redacted['organizer_email'] === 'string') {
-    redacted['organizer_email'] = redactEmail(redacted['organizer_email']);
+  if (typeof redacted.organizer_email === 'string') {
+    redacted.organizer_email = redactEmail(redacted.organizer_email);
   }
-  if (typeof redacted['host_email'] === 'string') {
-    redacted['host_email'] = redactEmail(redacted['host_email']);
+  if (typeof redacted.host_email === 'string') {
+    redacted.host_email = redactEmail(redacted.host_email);
   }
-  if (Array.isArray(redacted['participants'])) {
-    redacted['participants'] = (redacted['participants'] as string[]).map(redactEmail);
+  if (Array.isArray(redacted.participants)) {
+    redacted.participants = (redacted.participants as string[]).map(redactEmail);
   }
-  if (Array.isArray(redacted['fireflies_users'])) {
-    redacted['fireflies_users'] = (redacted['fireflies_users'] as string[]).map(
+  if (Array.isArray(redacted.fireflies_users)) {
+    redacted.fireflies_users = (redacted.fireflies_users as string[]).map(
       (_, i) => `user-${i + 1}`
     );
   }
-  if (Array.isArray(redacted['meeting_attendees'])) {
-    redacted['meeting_attendees'] = (
-      redacted['meeting_attendees'] as Array<Record<string, unknown>>
-    ).map((attendee, i) => ({
-      ...attendee,
-      email: `attendee${i + 1}@example.com`,
-      displayName: `Attendee ${i + 1}`,
-      name: `Attendee ${i + 1}`,
-    }));
+  if (Array.isArray(redacted.meeting_attendees)) {
+    redacted.meeting_attendees = (redacted.meeting_attendees as Array<Record<string, unknown>>).map(
+      (attendee, i) => ({
+        ...attendee,
+        email: `attendee${i + 1}@example.com`,
+        displayName: `Attendee ${i + 1}`,
+        name: `Attendee ${i + 1}`,
+      })
+    );
   }
-  if (typeof redacted['audio_url'] === 'string') {
-    redacted['audio_url'] = 'https://storage.example.com/redacted-audio.mp3';
+  if (typeof redacted.audio_url === 'string') {
+    redacted.audio_url = 'https://storage.example.com/redacted-audio.mp3';
   }
-  if (typeof redacted['video_url'] === 'string') {
-    redacted['video_url'] = 'https://storage.example.com/redacted-video.mp4';
+  if (typeof redacted.video_url === 'string') {
+    redacted.video_url = 'https://storage.example.com/redacted-video.mp4';
   }
-  if (typeof redacted['meeting_link'] === 'string') {
-    redacted['meeting_link'] = 'https://meet.example.com/redacted';
+  if (typeof redacted.meeting_link === 'string') {
+    redacted.meeting_link = 'https://meet.example.com/redacted';
   }
 
   return redacted;

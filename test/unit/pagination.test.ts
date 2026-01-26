@@ -78,10 +78,7 @@ describe('paginate', () => {
 
   it('handles fetcher error on second page', async () => {
     const error = new Error('Page 2 failed');
-    const fetcher = vi
-      .fn()
-      .mockResolvedValueOnce([1, 2, 3])
-      .mockRejectedValueOnce(error);
+    const fetcher = vi.fn().mockResolvedValueOnce([1, 2, 3]).mockRejectedValueOnce(error);
 
     await expect(collectAll(paginate(fetcher, 3))).rejects.toThrow('Page 2 failed');
   });

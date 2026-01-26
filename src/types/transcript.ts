@@ -80,8 +80,10 @@ export interface User {
   email: string;
   /** User's display name */
   name?: string;
-  /** Fireflies plan (free, pro, business, enterprise) */
-  plan?: string;
+  /** Number of transcripts */
+  num_transcripts?: number;
+  /** Whether user is admin */
+  is_admin?: boolean;
 }
 
 /**
@@ -270,14 +272,20 @@ export interface AppsPreview {
  * Output from an AI App.
  */
 export interface AIAppOutput {
+  /** Transcript identifier */
+  transcript_id?: string;
+  /** User identifier */
+  user_id?: string;
   /** App identifier */
   app_id?: string;
-  /** App name */
-  app_name?: string;
-  /** Output content */
-  content?: string;
-  /** Timestamp when generated */
-  created_at?: string;
+  /** Timestamp when generated (Unix timestamp) */
+  created_at?: number;
+  /** App title */
+  title?: string;
+  /** The prompt used */
+  prompt?: string;
+  /** The AI response */
+  response?: string;
 }
 
 /**
@@ -285,12 +293,18 @@ export interface AIAppOutput {
  * Requires Pro plan or higher.
  */
 export interface MeetingAnalytics {
-  /** Overall sentiment score */
-  sentiment?: number;
-  /** Talk time per speaker in seconds */
-  speaker_talk_time?: Record<string, number>;
-  /** Number of questions asked */
-  questions_count?: number;
-  /** Filler word usage */
-  filler_words?: Record<string, number>;
+  /** Sentiment breakdown */
+  sentiments?: Sentiments;
+}
+
+/**
+ * Sentiment percentages for a meeting.
+ */
+export interface Sentiments {
+  /** Percentage of negative sentiment (0-100) */
+  negative_pct?: number;
+  /** Percentage of neutral sentiment (0-100) */
+  neutral_pct?: number;
+  /** Percentage of positive sentiment (0-100) */
+  positive_pct?: number;
 }

@@ -36,6 +36,7 @@ export type {
   MeetingAttendee,
   MeetingInfo,
   Sentence,
+  Sentiments,
   Speaker,
   Summary,
   SummarySection,

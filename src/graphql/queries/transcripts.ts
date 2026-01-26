@@ -27,7 +27,6 @@ const TRANSCRIPT_BASE_FIELDS = `
     user_id
     email
     name
-    plan
   }
   speakers {
     id
@@ -64,18 +63,22 @@ const TRANSCRIPT_BASE_FIELDS = `
   calendar_type
   apps_preview {
     outputs {
+      transcript_id
+      user_id
       app_id
-      app_name
-      content
       created_at
+      title
+      prompt
+      response
     }
   }
   meeting_link
   analytics {
-    sentiment
-    speaker_talk_time
-    questions_count
-    filler_words
+    sentiments {
+      negative_pct
+      neutral_pct
+      positive_pct
+    }
   }
   channels {
     id
@@ -262,13 +265,13 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         query ListTranscripts(
           $keyword: String
           $scope: String
-          $organizers: [String]
-          $participants: [String]
+          $organizers: [String!]
+          $participants: [String!]
           $user_id: String
           $mine: Boolean
           $channel_id: String
-          $fromDate: String
-          $toDate: String
+          $fromDate: DateTime
+          $toDate: DateTime
           $limit: Int
           $skip: Int
           $title: String

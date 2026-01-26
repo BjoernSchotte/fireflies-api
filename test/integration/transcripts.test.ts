@@ -54,10 +54,10 @@ describe('transcripts.list', () => {
       limit: 10,
     });
 
-    expect(receivedVariables['keyword']).toBe('standup');
-    expect(receivedVariables['scope']).toBe('title');
-    expect(receivedVariables['mine']).toBe(true);
-    expect(receivedVariables['limit']).toBe(10);
+    expect(receivedVariables.keyword).toBe('standup');
+    expect(receivedVariables.scope).toBe('title');
+    expect(receivedVariables.mine).toBe(true);
+    expect(receivedVariables.limit).toBe(10);
   });
 
   it('handles empty results', async () => {

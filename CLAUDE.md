@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **No `any` types** without explicit justification in a comment explaining why.
 - **Types exported from index.ts only.** Consumers import from `'fireflies-api'`, never from internal paths.
 - **Functional core, imperative shell.** Pure business logic in core modules, I/O and side effects at the edges.
+- **Live tests MUST be non-destructive.** Live E2E tests should only read data, never create/update/delete. This protects real user data when running against production APIs.
 
 ## Code Style
 
