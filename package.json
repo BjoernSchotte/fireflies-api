@@ -23,7 +23,9 @@
     "test:live": "LIVE_TEST=1 vitest run --config vitest.live.config.ts",
     "check": "biome check .",
     "fix": "biome check --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "changelog:preview": "conventional-changelog -p angular -r 1"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "conventional-changelog-cli": "^5.0.0",
     "msw": "^2.0.0",
     "socket.io": "^4.8.3",
     "tsup": "^8.0.0",

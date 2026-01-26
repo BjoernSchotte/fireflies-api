@@ -10,11 +10,23 @@ jobs:
     name: Publish to npm
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # For GitHub release
       id-token: write  # For npm provenance
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changelog generation
+
+      - name: Validate version
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
+          echo "Version validated: $TAG_VERSION"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -42,3 +54,15 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Generate release notes
+        id: changelog
+        run: |
+          npx conventional-changelog-cli -p angular -r 2 -o RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: false
