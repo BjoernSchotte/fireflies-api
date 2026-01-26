@@ -286,6 +286,7 @@ try {
 
 ## References
 
+- Fireflies API Introduction: https://docs.fireflies.ai/getting-started/introduction
 - Fireflies API Docs: https://docs.fireflies.ai
 - Official SDK: https://www.npmjs.com/package/@firefliesai/fireflies-node-sdk
 - GraphQL Endpoint: https://api.fireflies.ai/graphql
