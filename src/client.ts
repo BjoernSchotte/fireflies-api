@@ -11,7 +11,7 @@ import { createMeetingsAPI, type MeetingsAPI } from './graphql/queries/meetings.
 import { createTranscriptsAPI, type TranscriptsAPI } from './graphql/queries/transcripts.js';
 import { createUsersAPI, type UsersAPI } from './graphql/queries/users.js';
 import { createRealtimeAPI, type RealtimeAPI } from './realtime/api.js';
-import type { FirefliesConfig } from './types/config.js';
+import type { FirefliesConfig, RateLimitState } from './types/config.js';
 
 /**
  * Main client for the Fireflies API.
@@ -47,6 +47,8 @@ import type { FirefliesConfig } from './types/config.js';
  * ```
  */
 export class FirefliesClient {
+  private readonly graphql: GraphQLClient;
+
   /**
    * Transcript operations: list, get, search, delete.
    */
@@ -89,21 +91,41 @@ export class FirefliesClient {
    * @throws FirefliesError if API key is missing
    */
   constructor(config: FirefliesConfig) {
-    const graphql = new GraphQLClient(config);
+    this.graphql = new GraphQLClient(config);
 
     // Combine queries and mutations for each resource
-    const transcriptsQueries = createTranscriptsAPI(graphql);
-    const transcriptsMutations = createTranscriptsMutationsAPI(graphql);
+    const transcriptsQueries = createTranscriptsAPI(this.graphql);
+    const transcriptsMutations = createTranscriptsMutationsAPI(this.graphql);
     this.transcripts = { ...transcriptsQueries, ...transcriptsMutations };
 
-    const usersQueries = createUsersAPI(graphql);
-    const usersMutations = createUsersMutationsAPI(graphql);
+    const usersQueries = createUsersAPI(this.graphql);
+    const usersMutations = createUsersMutationsAPI(this.graphql);
     this.users = { ...usersQueries, ...usersMutations };
 
-    this.bites = createBitesAPI(graphql);
-    this.meetings = createMeetingsAPI(graphql);
-    this.audio = createAudioAPI(graphql);
-    this.aiApps = createAIAppsAPI(graphql);
+    this.bites = createBitesAPI(this.graphql);
+    this.meetings = createMeetingsAPI(this.graphql);
+    this.audio = createAudioAPI(this.graphql);
+    this.aiApps = createAIAppsAPI(this.graphql);
     this.realtime = createRealtimeAPI(config.apiKey);
+  }
+
+  /**
+   * Get the current rate limit state.
+   * Returns undefined if rate limit tracking is not configured.
+   *
+   * @example
+   * ```typescript
+   * const client = new FirefliesClient({
+   *   apiKey: '...',
+   *   rateLimit: { warningThreshold: 10 }
+   * });
+   *
+   * await client.users.me();
+   * console.log(client.rateLimits);
+   * // { remaining: 59, limit: 60, resetInSeconds: 60, updatedAt: 1706299500000 }
+   * ```
+   */
+  get rateLimits(): RateLimitState | undefined {
+    return this.graphql.rateLimitState;
   }
 }

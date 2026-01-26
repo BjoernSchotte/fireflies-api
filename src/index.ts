@@ -62,7 +62,13 @@ export type {
   BiteUser,
 } from './types/bite.js';
 // Configuration
-export type { FirefliesConfig, RetryConfig } from './types/config.js';
+export type {
+  FirefliesConfig,
+  RateLimitConfig,
+  RateLimitState,
+  RetryConfig,
+  ThrottleConfig,
+} from './types/config.js';
 
 // Meeting types
 export type {

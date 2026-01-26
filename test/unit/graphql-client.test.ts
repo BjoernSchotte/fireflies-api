@@ -1,12 +1,13 @@
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   AuthenticationError,
   FirefliesError,
   GraphQLError,
   NetworkError,
   NotFoundError,
+  RateLimitError,
   TimeoutError,
 } from '../../src/errors.js';
 import { GraphQLClient } from '../../src/graphql/client.js';
@@ -310,6 +311,217 @@ describe('GraphQLClient', () => {
 
       expect(result).toEqual({ success: true });
       expect(callCount).toBe(3);
+    });
+  });
+
+  describe('rate limit tracking', () => {
+    it('captures rate limit headers and invokes onUpdate callback', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json(
+            { data: { user: { id: '1' } } },
+            {
+              headers: {
+                'x-ratelimit-remaining-api': '59',
+                'x-ratelimit-limit-api': '60',
+                'x-ratelimit-reset-api': '45',
+              },
+            }
+          );
+        })
+      );
+
+      const onUpdate = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onUpdate },
+      });
+
+      await client.execute('query {}');
+
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(onUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remaining: 59,
+          limit: 60,
+          resetInSeconds: 45,
+        })
+      );
+    });
+
+    it('exposes rate limit state via rateLimitState getter', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json(
+            { data: {} },
+            {
+              headers: {
+                'x-ratelimit-remaining-api': '42',
+                'x-ratelimit-limit-api': '60',
+              },
+            }
+          );
+        })
+      );
+
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: {},
+      });
+
+      expect(client.rateLimitState).toEqual(
+        expect.objectContaining({
+          remaining: undefined,
+          updatedAt: 0,
+        })
+      );
+
+      await client.execute('query {}');
+
+      expect(client.rateLimitState?.remaining).toBe(42);
+      expect(client.rateLimitState?.limit).toBe(60);
+    });
+
+    it('invokes onWarning when remaining falls below threshold', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json({ data: {} }, { headers: { 'x-ratelimit-remaining-api': '5' } });
+        })
+      );
+
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}');
+
+      expect(onWarning).toHaveBeenCalledTimes(1);
+      expect(onWarning).toHaveBeenCalledWith(expect.objectContaining({ remaining: 5 }));
+    });
+
+    it('does not invoke onWarning when remaining is above threshold', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json(
+            { data: {} },
+            { headers: { 'x-ratelimit-remaining-api': '15' } }
+          );
+        })
+      );
+
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}');
+
+      expect(onWarning).not.toHaveBeenCalled();
+    });
+
+    it('invokes onWarning again when remaining drops further below threshold', async () => {
+      let remaining = 8;
+      server.use(
+        http.post(API_URL, () => {
+          const current = remaining;
+          remaining -= 2; // Simulate dropping: 8 -> 6 -> 4
+          return HttpResponse.json(
+            { data: {} },
+            { headers: { 'x-ratelimit-remaining-api': String(current) } }
+          );
+        })
+      );
+
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}'); // remaining=8, warns
+      await client.execute('query {}'); // remaining=6, warns again (dropped from 8)
+      await client.execute('query {}'); // remaining=4, warns again (dropped from 6)
+
+      expect(onWarning).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not invoke onWarning when remaining stays at same level', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json({ data: {} }, { headers: { 'x-ratelimit-remaining-api': '5' } });
+        })
+      );
+
+      const onWarning = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onWarning, warningThreshold: 10 },
+      });
+
+      await client.execute('query {}'); // remaining=5, warns (first time below threshold)
+      await client.execute('query {}'); // remaining=5 again, should NOT warn
+      await client.execute('query {}'); // remaining=5 again, should NOT warn
+
+      expect(onWarning).toHaveBeenCalledTimes(1);
+    });
+
+    it('invokes onRateLimited on 429 response', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json(
+            { error: 'Rate limited' },
+            {
+              status: 429,
+              headers: {
+                'retry-after': '30',
+                'x-ratelimit-remaining-api': '0',
+              },
+            }
+          );
+        })
+      );
+
+      const onRateLimited = vi.fn();
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onRateLimited },
+        retry: { maxRetries: 0 },
+      });
+
+      await expect(client.execute('query {}')).rejects.toThrow(RateLimitError);
+      expect(onRateLimited).toHaveBeenCalledTimes(1);
+      expect(onRateLimited).toHaveBeenCalledWith(expect.objectContaining({ remaining: 0 }), 30);
+    });
+
+    it('returns undefined for rateLimitState when not configured', () => {
+      const client = new GraphQLClient({ apiKey: 'test-key' });
+      expect(client.rateLimitState).toBeUndefined();
+    });
+
+    it('catches callback errors without breaking the SDK', async () => {
+      server.use(
+        http.post(API_URL, () => {
+          return HttpResponse.json(
+            { data: { result: 'ok' } },
+            { headers: { 'x-ratelimit-remaining-api': '50' } }
+          );
+        })
+      );
+
+      const throwingCallback = () => {
+        throw new Error('User callback error');
+      };
+      const client = new GraphQLClient({
+        apiKey: 'test-key',
+        rateLimit: { onUpdate: throwingCallback },
+      });
+
+      // Should not throw despite callback error
+      const result = await client.execute<{ result: string }>('query {}');
+      expect(result).toEqual({ result: 'ok' });
     });
   });
 });
