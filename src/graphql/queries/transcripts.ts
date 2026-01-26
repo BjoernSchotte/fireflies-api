@@ -86,6 +86,10 @@ const TRANSCRIPT_FIELDS = `
     meeting_type
     topics_discussed
     transcript_chapters
+    extended_sections {
+      title
+      content
+    }
   }
   meeting_info {
     fred_joined
@@ -103,6 +107,12 @@ const TRANSCRIPT_FIELDS = `
     }
   }
   meeting_link
+  analytics {
+    sentiment
+    speaker_talk_time
+    questions_count
+    filler_words
+  }
   channels {
     id
     title
@@ -265,6 +275,10 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
               meeting_type
               topics_discussed
               transcript_chapters
+              extended_sections {
+                title
+                content
+              }
             }
           }
         }
