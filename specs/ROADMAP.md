@@ -2,6 +2,29 @@
 
 This is the authoritative roadmap for the fireflies-api package. Development follows vertical slicing - each milestone delivers complete, usable functionality end-to-end.
 
+## Testing Strategy
+
+We avoid mocks because they lie. Instead:
+
+```
+                    ┌─────────────┐
+                    │   Live E2E  │  ← Manual, validates fixtures match reality
+                    │  (optional) │
+                    └─────────────┘
+               ┌─────────────────────┐
+               │  Recorded Fixtures  │  ← Real API responses, replayed in CI
+               │   (contract-ish)    │
+               └─────────────────────┘
+          ┌───────────────────────────────┐
+          │         Unit Tests            │  ← Pure functions, zero mocks
+          │  (retry, dedup, error parse)  │
+          └───────────────────────────────┘
+```
+
+- **Unit tests**: Pure functions only (retry logic, deduplication, error parsing). No mocks.
+- **Recorded fixtures**: Real Fireflies API responses captured in `test/fixtures/`, replayed via msw or nock. Re-record periodically to catch API drift.
+- **Live E2E** (optional): `FIREFLIES_API_KEY=xxx npm run test:live` - validates fixtures, skipped in CI.
+
 ## Milestone 1: Foundation + Transcripts (v0.1.0)
 
 **Goal:** Working package that can fetch transcripts. Validates project setup and API design.
@@ -11,7 +34,9 @@ This is the authoritative roadmap for the fireflies-api package. Development fol
   - [ ] tsconfig.json (strict, ESM)
   - [ ] tsup.config.ts (ESM + CJS dual output)
   - [ ] biome.json
-  - [ ] vitest.config.ts
+  - [ ] vitest.config.ts (separate configs for unit/integration/live)
+  - [ ] `test/fixtures/` directory structure
+  - [ ] Scripts: `test`, `test:live`, `test:record`
 - [ ] Core infrastructure
   - [ ] `src/client.ts` - FirefliesClient entry point
   - [ ] `src/graphql/client.ts` - GraphQL executor with native fetch
@@ -23,8 +48,10 @@ This is the authoritative roadmap for the fireflies-api package. Development fol
   - [ ] `src/graphql/queries/transcripts.ts` - get, list queries
   - [ ] `src/helpers/pagination.ts` - listAll async iterator
 - [ ] Tests
-  - [ ] Unit tests for retry logic
-  - [ ] Integration tests for transcripts (mocked)
+  - [ ] Unit tests for retry logic, error parsing
+  - [ ] Record fixtures from real Fireflies API (`test/fixtures/transcripts/`)
+  - [ ] Integration tests using recorded fixtures
+  - [ ] Optional live E2E test (`npm run test:live`)
 - [ ] `src/index.ts` - Public exports
 
 **Deliverable:** `npm install && npm run build` works. Can fetch transcripts from Fireflies API.
@@ -46,9 +73,10 @@ This is the authoritative roadmap for the fireflies-api package. Development fol
   - [ ] Auto-reconnect with exponential backoff
   - [ ] Connection timeout handling
 - [ ] Tests
-  - [ ] Mock Socket.IO server tests
-  - [ ] Deduplication tests
-  - [ ] Reconnection tests
+  - [ ] Unit tests for deduplication, reconnection logic
+  - [ ] Socket.IO test server for integration tests (real protocol, controlled responses)
+  - [ ] Record realtime fixtures from live meeting
+  - [ ] Optional live E2E with active meeting
 
 **Deliverable:** Can stream live transcription from active Fireflies meetings.
 
