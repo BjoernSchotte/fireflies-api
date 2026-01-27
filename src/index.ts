@@ -73,6 +73,10 @@ export {
   type MultiUserOptions,
   type MultiUserTranscript,
 } from './helpers/multi-user.js';
+export {
+  createNormalizer,
+  normalizeTranscript,
+} from './helpers/normalize.js';
 export { collectAll, paginate } from './helpers/pagination.js';
 export { searchTranscript } from './helpers/search.js';
 export {
@@ -125,6 +129,18 @@ export type {
   MeetingPrivacy,
   MeetingState,
 } from './types/meeting.js';
+// Normalized types
+export type {
+  NormalizationOptions,
+  NormalizedAnalytics,
+  NormalizedAttendee,
+  NormalizedChannel,
+  NormalizedMeeting,
+  NormalizedParticipant,
+  NormalizedSentence,
+  NormalizedSpeaker,
+  NormalizedSummary,
+} from './types/normalized.js';
 // Parameter types
 export type {
   ActiveMeetingsParams,
