@@ -29,7 +29,11 @@ export type { BitesAPI } from './graphql/queries/bites.js';
 export type { MeetingsAPI } from './graphql/queries/meetings.js';
 export type { TranscriptsAPI } from './graphql/queries/transcripts.js';
 export type { UsersAPI } from './graphql/queries/users.js';
-
+export {
+  type AccumulatedTranscript,
+  type SpeakerTurn,
+  TranscriptAccumulator,
+} from './helpers/accumulator.js';
 // Helpers
 export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
 export {
