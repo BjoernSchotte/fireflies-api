@@ -1,10 +1,15 @@
 import type { Command } from 'commander';
 import { extractActionItems } from '../../helpers/action-items.js';
+import { formatActionItemsMarkdown } from '../../helpers/action-items-format.js';
 import { analyzeSpeakers } from '../../helpers/speaker-analytics.js';
+import type {
+  ActionItemsFilterOptions,
+  ActionItemsMarkdownOptions,
+} from '../../types/action-items.js';
 import { getClient, getOutputFormat } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
-import { output, outputActionItems, outputSpeakerAnalytics } from '../utils/output.js';
+import { output, outputActionItems, outputSpeakerAnalytics, writeLine } from '../utils/output.js';
 import { formatDuration } from '../utils/parse.js';
 
 /**
@@ -12,6 +17,58 @@ import { formatDuration } from '../utils/parse.js';
  */
 function collect(value: string, previous: string[]): string[] {
   return previous.concat([value]);
+}
+
+/** Build filter options from CLI opts */
+function buildActionItemFilterOptions(opts: {
+  assignee?: string[];
+  assignedOnly?: boolean;
+  datedOnly?: boolean;
+}): ActionItemsFilterOptions | undefined {
+  const filterOptions: ActionItemsFilterOptions = {};
+  if (opts.assignee?.length) {
+    filterOptions.assignees = opts.assignee;
+  }
+  if (opts.assignedOnly) {
+    filterOptions.assignedOnly = true;
+  }
+  if (opts.datedOnly) {
+    filterOptions.datedOnly = true;
+  }
+  return Object.keys(filterOptions).length > 0 ? filterOptions : undefined;
+}
+
+/** Build markdown options from CLI opts */
+function buildMarkdownOptions(opts: {
+  style?: string;
+  groupBy?: string;
+  preset?: string;
+  includeAssignee?: boolean;
+  includeDueDate?: boolean;
+  includeMeeting?: boolean;
+  includeSummary?: boolean;
+}): ActionItemsMarkdownOptions {
+  return {
+    style: opts.style as ActionItemsMarkdownOptions['style'],
+    groupBy: opts.groupBy as ActionItemsMarkdownOptions['groupBy'],
+    preset: opts.preset as ActionItemsMarkdownOptions['preset'],
+    includeAssignee: opts.includeAssignee,
+    includeDueDate: opts.includeDueDate,
+    includeMeetingTitle: opts.includeMeeting,
+    includeSummary: opts.includeSummary,
+  };
+}
+
+/** Write content to file and log result */
+async function writeToFile(path: string, content: string, itemCount: number): Promise<void> {
+  const fs = await import('node:fs/promises');
+  await fs.writeFile(path, content);
+  console.log(`Wrote ${itemCount} action items to ${path}`);
+}
+
+/** Get array param or undefined if empty */
+function arrayOrUndefined<T>(arr: T[] | undefined): T[] | undefined {
+  return arr?.length ? arr : undefined;
 }
 
 export function registerTranscriptsCommand(program: Command): void {
@@ -135,9 +192,15 @@ export function registerTranscriptsCommand(program: Command): void {
       })
     );
 
-  cmd
-    .command('action-items <id>')
-    .description('Extract action items from a transcript')
+  // action-items parent command with subcommands
+  const actionItemsCmd = cmd
+    .command('action-items')
+    .description('Extract and export action items from transcripts');
+
+  // Single transcript action items (get subcommand)
+  actionItemsCmd
+    .command('get <id>')
+    .description('Extract action items from a single transcript')
     .option('--no-assignees', 'Skip assignee detection')
     .option('--no-due-dates', 'Skip due date detection')
     .option('--include-source', 'Include source sentences from transcript')
@@ -158,6 +221,72 @@ export function registerTranscriptsCommand(program: Command): void {
         });
 
         outputActionItems(result, format);
+      })
+    );
+
+  // Multi-transcript action items export
+  actionItemsCmd
+    .command('export')
+    .description('Export action items from multiple transcripts')
+    // Date filters
+    .option('--from <date>', 'From date (YYYY-MM-DD or ISO 8601)')
+    .option('--to <date>', 'To date (YYYY-MM-DD or ISO 8601)')
+    .option('--today', 'Transcripts from today')
+    .option('--yesterday', 'Transcripts from yesterday')
+    .option('--last-week', 'Transcripts from last 7 days')
+    .option('--last-month', 'Transcripts from last 30 days')
+    .option('--days <n>', 'Transcripts from last N days')
+    .option('--mine', 'Only my transcripts')
+    .option('--limit <n>', 'Max transcripts to process')
+    .option('--organizer <email>', 'Filter by organizer email (repeatable)', collect, [])
+    .option('--participant <email>', 'Filter by participant email (repeatable)', collect, [])
+    // Action item filters
+    .option('--assignee <name>', 'Filter by assignee (repeatable)', collect, [])
+    .option('--assigned-only', 'Only items with assignees')
+    .option('--dated-only', 'Only items with due dates')
+    // Markdown formatting
+    .option('--style <style>', 'List style: checkbox (default), bullet, numbered')
+    .option('--group-by <by>', 'Group by: none (default), assignee, transcript, date')
+    .option('--preset <preset>', 'Format preset: default, notion, obsidian, github')
+    .option('--include-assignee', 'Show assignee inline')
+    .option('--include-due-date', 'Show due date inline')
+    .option('--include-meeting', 'Show meeting title inline')
+    .option('--include-summary', 'Include stats summary')
+    // Output
+    .option('-o, --output <file>', 'Write to file')
+    .action(
+      withErrorHandling(async (opts) => {
+        const client = getClient(program);
+        const format = getOutputFormat(program);
+        const { fromDate, toDate } = resolveDateRange(opts);
+        const filterOptions = buildActionItemFilterOptions(opts);
+
+        const result = await client.transcripts.exportActionItems({
+          fromDate,
+          toDate,
+          mine: opts.mine,
+          organizers: arrayOrUndefined(opts.organizer),
+          participants: arrayOrUndefined(opts.participant),
+          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+          filterOptions,
+        });
+
+        // Plain format outputs markdown
+        if (format === 'plain') {
+          const markdown = formatActionItemsMarkdown(result, buildMarkdownOptions(opts));
+          return opts.output
+            ? writeToFile(opts.output, markdown, result.totalItems)
+            : writeLine(markdown);
+        }
+
+        // Structured formats
+        const content =
+          format === 'jsonl'
+            ? result.items.map((i) => JSON.stringify(i)).join('\n')
+            : JSON.stringify(result, null, 2);
+        return opts.output
+          ? writeToFile(opts.output, content, result.totalItems)
+          : output(result, format);
       })
     );
 

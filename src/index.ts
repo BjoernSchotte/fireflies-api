@@ -40,6 +40,11 @@ export {
   type ActionItemsResult,
   extractActionItems,
 } from './helpers/action-items.js';
+export {
+  aggregateActionItems,
+  filterActionItems,
+  formatActionItemsMarkdown,
+} from './helpers/action-items-format.js';
 // Helpers
 export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
 export {
@@ -85,6 +90,17 @@ export type {
   RealtimeEvents,
   TranscriptionChunk,
 } from './realtime/types.js';
+// Action items export types
+export type {
+  ActionItemGrouping,
+  ActionItemPreset,
+  ActionItemStyle,
+  ActionItemsFilterOptions,
+  ActionItemsMarkdownOptions,
+  AggregatedActionItem,
+  AggregatedActionItemsResult,
+  ExportActionItemsParams,
+} from './types/action-items.js';
 // AI App types
 export type { AIApp } from './types/ai-app.js';
 // Bite types

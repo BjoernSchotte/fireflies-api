@@ -1,7 +1,12 @@
+import { aggregateActionItems } from '../../helpers/action-items-format.js';
 import { extractDomain, hasExternalParticipants } from '../../helpers/domain-utils.js';
 import { analyzeMeetings } from '../../helpers/meeting-insights.js';
 import { paginate } from '../../helpers/pagination.js';
 import { searchTranscript } from '../../helpers/search.js';
+import type {
+  AggregatedActionItemsResult,
+  ExportActionItemsParams,
+} from '../../types/action-items.js';
 import type { MeetingInsights } from '../../types/meeting-insights.js';
 import type {
   TranscriptGetParams,
@@ -303,6 +308,31 @@ export interface TranscriptsAPI {
    * ```
    */
   insights(params?: TranscriptsInsightsParams): Promise<MeetingInsights>;
+
+  /**
+   * Export action items from multiple transcripts.
+   *
+   * Fetches transcripts matching the filter criteria, extracts action
+   * items from each, and aggregates them with source metadata.
+   *
+   * @param params - Filtering options for transcripts and action items
+   * @returns Aggregated action items with statistics
+   *
+   * @example
+   * ```typescript
+   * const result = await client.transcripts.exportActionItems({
+   *   fromDate: '2024-01-01',
+   *   mine: true,
+   *   filterOptions: { assignedOnly: true },
+   * });
+   *
+   * console.log(`${result.totalItems} action items from ${result.transcriptsProcessed} meetings`);
+   * for (const item of result.items) {
+   *   console.log(`${item.text} (${item.transcriptTitle})`);
+   * }
+   * ```
+   */
+  exportActionItems(params?: ExportActionItemsParams): Promise<AggregatedActionItemsResult>;
 }
 
 /**
@@ -521,6 +551,31 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         topSpeakersCount,
         topParticipantsCount,
       });
+    },
+
+    async exportActionItems(
+      params: ExportActionItemsParams = {}
+    ): Promise<AggregatedActionItemsResult> {
+      const { fromDate, toDate, mine, organizers, participants, limit, filterOptions } = params;
+
+      // Fetch transcripts with summary (needed for action items)
+      const transcripts: Transcript[] = [];
+      for await (const t of this.listAll({
+        fromDate,
+        toDate,
+        mine,
+        organizers,
+        participants,
+      })) {
+        // Fetch summary for action items
+        const full = await this.get(t.id, { includeSentences: false, includeSummary: true });
+        transcripts.push(full);
+
+        if (limit && transcripts.length >= limit) break;
+      }
+
+      // Aggregate action items using the helper
+      return aggregateActionItems(transcripts, {}, filterOptions);
     },
   };
 }
