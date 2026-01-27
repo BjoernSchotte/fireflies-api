@@ -13,7 +13,7 @@ interface GlobalOptions {
  */
 export function getClient(cmd: Command): FirefliesClient {
   const opts = cmd.optsWithGlobals() as GlobalOptions;
-  // eslint-disable-next-line @typescript-eslint/dot-notation
+  // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for process.env
   const apiKey = opts.apiKey ?? process.env['FIREFLIES_API_KEY'];
 
   if (!apiKey) {
