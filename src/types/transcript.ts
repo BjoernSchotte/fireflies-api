@@ -29,7 +29,7 @@ export interface Transcript {
   fireflies_users: string[];
   /** Workspace user IDs with access (v2.20.0+) */
   workspace_users: string[];
-  /** Duration of the meeting in seconds */
+  /** Duration of the meeting in minutes */
   duration: number;
   /** ISO 8601 date string of the meeting */
   dateString: string;

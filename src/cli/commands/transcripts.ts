@@ -62,13 +62,14 @@ export function registerTranscriptsCommand(program: Command): void {
           channel_id: opts.channel,
         });
 
-        // Use human-readable duration for table/plain, rounded seconds for data formats
+        // Use human-readable duration for table/plain, rounded minutes for data formats
+        // API returns duration in minutes, convert to seconds for formatDuration
         const useHumanDuration = format === 'table' || format === 'plain';
         const formatted = transcripts.map((t) => ({
           id: t.id,
           title: t.title,
           date: t.dateString,
-          duration: useHumanDuration ? formatDuration(t.duration) : Math.round(t.duration),
+          duration: useHumanDuration ? formatDuration(t.duration * 60) : Math.round(t.duration),
           organizer: t.organizer_email,
         }));
 
