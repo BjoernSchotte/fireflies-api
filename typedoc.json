@@ -1,0 +1,33 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "api-docs",
+  "name": "fireflies-api",
+  "readme": "README.md",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Client",
+    "Transcripts",
+    "Users",
+    "Bites",
+    "Meetings",
+    "Audio",
+    "AI Apps",
+    "Realtime",
+    "Webhooks",
+    "Helpers",
+    "Errors",
+    "Types",
+    "*"
+  ],
+  "navigationLinks": {
+    "GitHub": "https://github.com/BjoernSchotte/fireflies-api"
+  },
+  "plugin": [],
+  "searchInComments": true,
+  "cleanOutputDir": true
+}

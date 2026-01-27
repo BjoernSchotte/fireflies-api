@@ -24,6 +24,9 @@ Thumbs.db
 # Test coverage
 coverage/
 
+# Generated API documentation
+api-docs/
+
 # Logs
 *.log
 npm-debug.log*

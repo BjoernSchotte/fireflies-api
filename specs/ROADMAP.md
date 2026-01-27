@@ -131,7 +131,7 @@ We avoid mocks because they lie. Instead:
 
 - [x] Documentation
   - [x] README.md with examples
-  - [ ] API documentation (TypeDoc or similar)
+  - [x] API documentation (TypeDoc)
   - [x] Migration guide from official SDK
 - [x] Examples
   - [x] `examples/basic-usage.ts`

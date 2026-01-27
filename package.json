@@ -43,7 +43,9 @@
     "fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "changelog:preview": "conventional-changelog -p angular -r 1"
+    "changelog:preview": "conventional-changelog -p angular -r 1",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -77,6 +79,7 @@
     "msw": "^2.0.0",
     "socket.io": "^4.8.3",
     "tsup": "^8.0.0",
+    "typedoc": "^0.28.16",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
   },
