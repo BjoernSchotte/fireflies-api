@@ -8,6 +8,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./express": {
+      "types": "./dist/middleware/express.d.ts",
+      "import": "./dist/middleware/express.js",
+      "require": "./dist/middleware/express.cjs"
+    },
+    "./fastify": {
+      "types": "./dist/middleware/fastify.d.ts",
+      "import": "./dist/middleware/fastify.js",
+      "require": "./dist/middleware/fastify.cjs"
+    },
+    "./hono": {
+      "types": "./dist/middleware/hono.d.ts",
+      "import": "./dist/middleware/hono.js",
+      "require": "./dist/middleware/hono.cjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -41,7 +56,9 @@
     "api",
     "sdk",
     "realtime",
-    "websocket"
+    "websocket",
+    "webhook",
+    "middleware"
   ],
   "author": "",
   "license": "MIT",
@@ -51,11 +68,32 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
+    "@hono/node-server": "^1.19.9",
+    "@types/express": "^5.0.6",
     "conventional-changelog-cli": "^5.0.0",
+    "express": "^5.2.1",
+    "fastify": "^5.7.2",
+    "hono": "^4.11.7",
     "msw": "^2.0.0",
     "socket.io": "^4.8.3",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "express": "^4.0.0 || ^5.0.0",
+    "fastify": "^4.0.0 || ^5.0.0",
+    "hono": "^3.0.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "hono": {
+      "optional": true
+    }
   }
 }

@@ -17,7 +17,13 @@ function addShebang() {
 }
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/cli/index.ts'],
+  entry: [
+    'src/index.ts',
+    'src/cli/index.ts',
+    'src/middleware/express.ts',
+    'src/middleware/fastify.ts',
+    'src/middleware/hono.ts',
+  ],
   format: ['esm', 'cjs'],
   dts: true,
   clean: true,
@@ -25,6 +31,7 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   minify: false,
+  external: ['express', 'fastify', 'hono'],
   async onSuccess() {
     addShebang();
   },
