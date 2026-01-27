@@ -14,20 +14,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **SDK methods** (`client.transcripts.search()`): Orchestration, API calls, data aggregation
   - **Helpers** (`searchTranscript()`, `analyzeSpeakers()`): Pure business logic, reusable, fully testable
   - **CLI**: Just one consumer of the SDK, not a privileged one
+- **New code placement decision tree:**
+  1. Is it pure logic with no API calls? → `src/helpers/` as exported function
+  2. Does it call Fireflies API? → SDK method in `src/graphql/queries/` or `src/graphql/mutations/`
+  3. Is it CLI-specific (arg parsing, output formatting)? → `src/cli/`
+  4. **NEVER put helper functions inline in SDK methods.** Extract to `src/helpers/` so they can be tested independently.
 - **Live E2E tests require user approval.** Before running, present tests grouped by: (1) read-only and (2) write operations. Ask user which to run. Never list or run delete tests unless user explicitly asks.
 
 ## Test-Driven Development (TDD) - Mandatory
 
+**STOP. Before writing ANY implementation code, ask yourself:**
+1. Have I written a failing test for this? If NO → write the test first.
+2. Have I run the test and seen it fail? If NO → run it now.
+3. Does it fail for the expected reason? If NO → fix the test.
+
 **The Red-Green-Refactor cycle is non-negotiable:**
 
 1. **RED:** Write a failing test first. Run it. Confirm it fails for the expected reason.
-2. **GREEN:** Write the code necessary to make the test pass.
+2. **GREEN:** Write the *minimum* code to make the test pass.
 3. **REFACTOR:** Clean up while keeping tests green.
 
 **Strict ordering:**
 - Tests MUST be written before implementation code
 - Never write implementation code "to be tested later"
-- If you find yourself writing code without a failing test, stop and write the test first
+- If you find yourself writing code without a failing test, STOP IMMEDIATELY and write the test first
+- This applies to ALL code: helpers, SDK methods, CLI commands, bug fixes
 
 **No mocks. No fakes. Tests must not lie.**
 - Unit tests: Test pure functions with real inputs/outputs
@@ -42,6 +53,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - A passing mock-heavy test suite provides false confidence
 
 **Test file naming:** `*.test.ts` colocated with source, or in `__tests__/` directory.
+
+## New Feature Workflow (MANDATORY)
+
+When implementing any new feature, follow this exact sequence:
+
+### Step 1: Identify the layers needed
+- [ ] What helpers (pure functions) are needed? List them.
+- [ ] What SDK method changes are needed?
+- [ ] What CLI changes are needed?
+
+### Step 2: Implement helpers FIRST (TDD)
+For each helper function:
+1. [ ] Create test file `test/unit/<helper-name>.test.ts`
+2. [ ] Write failing tests covering edge cases
+3. [ ] Run tests, confirm they fail: `npm test -- <helper-name>`
+4. [ ] Implement helper in `src/helpers/<helper-name>.ts`
+5. [ ] Run tests, confirm they pass
+6. [ ] Export from `src/index.ts` if public API
+
+### Step 3: Implement SDK method (uses helpers)
+1. [ ] Add/update types in `src/types/`
+2. [ ] Implement SDK method that calls helpers
+3. [ ] SDK method should be thin: fetch data → call helper → return result
+
+### Step 4: Implement CLI (thin wrapper)
+1. [ ] Add CLI command/flag
+2. [ ] CLI only does: parse args → call SDK → format output
+3. [ ] No business logic in CLI
+
+### Step 5: E2E verification
+1. [ ] Build: `npm run build`
+2. [ ] Run CLI command manually to verify
+
+**If you skip any step, STOP and go back.** The architecture exists to keep code testable and maintainable.
 
 ## Code Style
 

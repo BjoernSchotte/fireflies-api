@@ -118,6 +118,67 @@ export interface TranscriptsListParams {
 }
 
 /**
+ * Parameters for transcript insights analysis.
+ * Combines filtering options (for fetching) with analysis options.
+ */
+export interface TranscriptsInsightsParams {
+  // Filtering options (for fetching transcripts)
+
+  /** Start of date range (ISO 8601 string) */
+  fromDate?: string;
+
+  /** End of date range (ISO 8601 string) */
+  toDate?: string;
+
+  /** Only analyze transcripts owned by the authenticated user */
+  mine?: boolean;
+
+  /** Filter by organizer emails */
+  organizers?: string[];
+
+  /** Filter by participant emails */
+  participants?: string[];
+
+  /** Filter by specific user ID */
+  user_id?: string;
+
+  /** Filter by channel ID */
+  channel_id?: string;
+
+  /** Maximum number of transcripts to analyze (default: no limit) */
+  limit?: number;
+
+  /**
+   * Only include meetings with external participants.
+   * External means participants whose email domain differs from the current user's domain.
+   * When true, fetches the current user's email to determine the internal domain.
+   */
+  external?: boolean;
+
+  // Analysis options (passed to analyzeMeetings helper)
+
+  /**
+   * Only include stats for these speakers.
+   * Speaker names must match exactly (case-sensitive).
+   */
+  speakers?: string[];
+
+  /**
+   * Group results by time period.
+   * - 'day': Group by calendar day
+   * - 'week': Group by ISO week
+   * - 'month': Group by month
+   */
+  groupBy?: 'day' | 'week' | 'month';
+
+  /** Number of top speakers to include (default: 10) */
+  topSpeakersCount?: number;
+
+  /** Number of top participants to include (default: 10) */
+  topParticipantsCount?: number;
+}
+
+/**
  * Parameters for getting a single transcript.
  */
 export interface TranscriptGetParams {

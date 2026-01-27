@@ -6,6 +6,7 @@ import { registerAiAppsCommand } from './commands/ai-apps.js';
 import { registerAudioCommand } from './commands/audio.js';
 import { registerBitesCommand } from './commands/bites.js';
 import { registerExportCommand } from './commands/export.js';
+import { registerInsightsCommand } from './commands/insights.js';
 import { registerMeetingsCommand } from './commands/meetings.js';
 import { registerRealtimeCommand } from './commands/realtime.js';
 import { registerSearchCommand } from './commands/search.js';
@@ -38,6 +39,7 @@ program
 // Register all commands
 registerTranscriptsCommand(program);
 registerSearchCommand(program);
+registerInsightsCommand(program);
 registerMeetingsCommand(program);
 registerUsersCommand(program);
 registerBitesCommand(program);

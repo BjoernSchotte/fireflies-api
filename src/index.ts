@@ -54,6 +54,16 @@ export {
   transcriptToMarkdown,
 } from './helpers/markdown.js';
 export {
+  analyzeMeetings,
+  type DayOfWeekStats,
+  type DayStats,
+  type MeetingInsights,
+  type MeetingInsightsOptions,
+  type ParticipantStats,
+  type SpeakerInsightStats,
+  type TimeGroupStats,
+} from './helpers/meeting-insights.js';
+export {
   getMeetingsForMultipleUsers,
   type MultiUserOptions,
   type MultiUserTranscript,
@@ -107,6 +117,7 @@ export type {
   BitesListParams,
   CreateBiteParams,
   TranscriptGetParams,
+  TranscriptsInsightsParams,
   TranscriptsListParams,
   TranscriptsQueryScope,
   UploadAudioAttendee,

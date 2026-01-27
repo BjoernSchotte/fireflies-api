@@ -1,6 +1,13 @@
+import { extractDomain, hasExternalParticipants } from '../../helpers/domain-utils.js';
+import { analyzeMeetings } from '../../helpers/meeting-insights.js';
 import { paginate } from '../../helpers/pagination.js';
 import { searchTranscript } from '../../helpers/search.js';
-import type { TranscriptGetParams, TranscriptsListParams } from '../../types/params.js';
+import type { MeetingInsights } from '../../types/meeting-insights.js';
+import type {
+  TranscriptGetParams,
+  TranscriptsInsightsParams,
+  TranscriptsListParams,
+} from '../../types/params.js';
 import type { SearchParams, SearchResults } from '../../types/search.js';
 import type {
   AppsPreview,
@@ -270,6 +277,32 @@ export interface TranscriptsAPI {
    * ```
    */
   search(query: string, params?: SearchParams): Promise<SearchResults>;
+
+  /**
+   * Compute aggregate meeting insights across transcripts.
+   *
+   * Fetches transcripts matching the filter criteria and computes
+   * aggregate statistics including duration totals, day of week
+   * distribution, participant counts, and speaker talk times.
+   *
+   * @param params - Filtering and analysis options
+   * @returns Aggregate meeting insights
+   *
+   * @example
+   * ```typescript
+   * const insights = await client.transcripts.insights({
+   *   fromDate: '2024-01-01',
+   *   toDate: '2024-01-31',
+   *   mine: true,
+   *   groupBy: 'week',
+   * });
+   *
+   * console.log(`${insights.totalMeetings} meetings`);
+   * console.log(`${insights.totalDurationMinutes} total minutes`);
+   * console.log(`Busiest day: ${getBusiestDay(insights.byDayOfWeek)}`);
+   * ```
+   */
+  insights(params?: TranscriptsInsightsParams): Promise<MeetingInsights>;
 }
 
 /**
@@ -431,6 +464,63 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         transcriptsWithMatches,
         matches: allMatches,
       };
+    },
+
+    async insights(params: TranscriptsInsightsParams = {}): Promise<MeetingInsights> {
+      const {
+        fromDate,
+        toDate,
+        mine,
+        organizers,
+        participants,
+        user_id,
+        channel_id,
+        limit,
+        external,
+        speakers,
+        groupBy,
+        topSpeakersCount,
+        topParticipantsCount,
+      } = params;
+
+      // Get internal domain if filtering for external meetings
+      let internalDomain: string | undefined;
+      if (external) {
+        const userQuery = 'query { user { email } }';
+        const userData = await client.execute<{ user: { email: string } }>(userQuery);
+        internalDomain = extractDomain(userData.user.email);
+      }
+
+      // Fetch transcripts with sentences (needed for speaker analysis)
+      const transcripts: Transcript[] = [];
+      for await (const t of this.listAll({
+        fromDate,
+        toDate,
+        mine,
+        organizers,
+        participants,
+        user_id,
+        channel_id,
+      })) {
+        // Skip if filtering for external and no external participants
+        if (internalDomain && !hasExternalParticipants(t.participants, internalDomain)) {
+          continue;
+        }
+
+        // Fetch full transcript with sentences
+        const full = await this.get(t.id, { includeSentences: true, includeSummary: false });
+        transcripts.push(full);
+
+        if (limit && transcripts.length >= limit) break;
+      }
+
+      // Analyze with the helper
+      return analyzeMeetings(transcripts, {
+        speakers,
+        groupBy,
+        topSpeakersCount,
+        topParticipantsCount,
+      });
     },
   };
 }
