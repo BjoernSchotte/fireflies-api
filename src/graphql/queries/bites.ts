@@ -140,10 +140,10 @@ export function createBitesAPI(client: GraphQLClient): BitesAPI {
           $name: String
           $mediaType: String
           $summary: String
-          $privacies: [String]
+          $privacies: [BitePrivacy!]
         ) {
           createBite(
-            transcript_id: $transcriptId
+            transcript_Id: $transcriptId
             start_time: $startTime
             end_time: $endTime
             name: $name
