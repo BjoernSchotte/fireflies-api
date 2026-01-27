@@ -10,6 +10,19 @@ import type {
   NormalizedSummary,
 } from '../types/normalized.js';
 import type { Sentence, Speaker, Summary, Transcript } from '../types/transcript.js';
+import type { BatchResult } from './batch.js';
+
+/**
+ * Options for batch normalization, extending NormalizationOptions.
+ */
+export interface BatchNormalizationOptions extends NormalizationOptions {
+  /**
+   * Delay between items in ms.
+   * Since normalization is a pure function, this is typically 0.
+   * @default 0
+   */
+  delayMs?: number;
+}
 
 /**
  * Default options for normalization.
@@ -282,4 +295,96 @@ function normalizeAnalytics(analytics: Transcript['analytics']): NormalizedAnaly
       negative: analytics.sentiments.negative_pct ?? 0,
     },
   };
+}
+
+/**
+ * Delay execution for a specified time.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Normalize multiple transcripts with streaming and error handling.
+ *
+ * Yields a BatchResult for each transcript, capturing any errors
+ * without stopping iteration.
+ *
+ * @param transcripts - Array or async iterable of transcripts to normalize
+ * @param options - Batch normalization options
+ * @returns AsyncIterable yielding BatchResult for each transcript
+ *
+ * @example
+ * ```typescript
+ * import { normalizeTranscripts } from 'fireflies-api';
+ *
+ * for await (const result of normalizeTranscripts(transcripts)) {
+ *   if (result.error) {
+ *     console.error(`Failed: ${result.item.id}`, result.error);
+ *   } else {
+ *     console.log(result.result.id); // "fireflies:..."
+ *   }
+ * }
+ * ```
+ */
+export async function* normalizeTranscripts(
+  transcripts: Transcript[] | AsyncIterable<Transcript>,
+  options?: BatchNormalizationOptions
+): AsyncIterable<BatchResult<Transcript, NormalizedMeeting>> {
+  const { delayMs = 0, ...normalizationOptions } = options ?? {};
+  let isFirst = true;
+
+  for await (const transcript of transcripts) {
+    // Add delay between items (not before first)
+    if (!isFirst && delayMs > 0) {
+      await delay(delayMs);
+    }
+    isFirst = false;
+
+    try {
+      const result = normalizeTranscript(transcript, normalizationOptions);
+      yield { item: transcript, result };
+    } catch (err) {
+      yield {
+        item: transcript,
+        error: err instanceof Error ? err : new Error(String(err)),
+      };
+    }
+  }
+}
+
+/**
+ * Normalize multiple transcripts and collect all results.
+ *
+ * Unlike the streaming `normalizeTranscripts()`, this waits for all items
+ * to complete and returns results as an array.
+ *
+ * @param transcripts - Array or async iterable of transcripts to normalize
+ * @param options - Batch normalization options
+ * @returns Array of BatchResult for each transcript
+ *
+ * @example
+ * ```typescript
+ * import { normalizeTranscriptsAll } from 'fireflies-api';
+ *
+ * const results = await normalizeTranscriptsAll(transcripts, {
+ *   timeUnit: 'milliseconds',
+ *   includeRawData: false,
+ * });
+ *
+ * const successful = results.filter(r => !r.error).map(r => r.result);
+ * const failed = results.filter(r => r.error);
+ * ```
+ */
+export async function normalizeTranscriptsAll(
+  transcripts: Transcript[] | AsyncIterable<Transcript>,
+  options?: BatchNormalizationOptions
+): Promise<BatchResult<Transcript, NormalizedMeeting>[]> {
+  const results: BatchResult<Transcript, NormalizedMeeting>[] = [];
+
+  for await (const result of normalizeTranscripts(transcripts, options)) {
+    results.push(result);
+  }
+
+  return results;
 }

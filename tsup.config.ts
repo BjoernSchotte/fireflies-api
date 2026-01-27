@@ -23,6 +23,7 @@ export default defineConfig({
     'src/middleware/express.ts',
     'src/middleware/fastify.ts',
     'src/middleware/hono.ts',
+    'src/schemas/index.ts',
   ],
   format: ['esm', 'cjs'],
   dts: true,
@@ -31,7 +32,7 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   minify: false,
-  external: ['express', 'fastify', 'hono'],
+  external: ['express', 'fastify', 'hono', 'zod'],
   async onSuccess() {
     addShebang();
   },

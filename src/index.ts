@@ -74,8 +74,11 @@ export {
   type MultiUserTranscript,
 } from './helpers/multi-user.js';
 export {
+  type BatchNormalizationOptions,
   createNormalizer,
   normalizeTranscript,
+  normalizeTranscripts,
+  normalizeTranscriptsAll,
 } from './helpers/normalize.js';
 export { collectAll, paginate } from './helpers/pagination.js';
 export { searchTranscript } from './helpers/search.js';

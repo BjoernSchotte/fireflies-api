@@ -12,8 +12,8 @@
 import {
   createNormalizer,
   FirefliesClient,
-  normalizeTranscript,
   type NormalizedMeeting,
+  normalizeTranscript,
 } from 'fireflies-api';
 
 const apiKey = process.env.FIREFLIES_API_KEY;

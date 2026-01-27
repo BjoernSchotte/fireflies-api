@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createNormalizer, normalizeTranscript } from '../../src/helpers/normalize.js';
+import {
+  createNormalizer,
+  normalizeTranscript,
+  normalizeTranscripts,
+  normalizeTranscriptsAll,
+} from '../../src/helpers/normalize.js';
 import type { Sentence, Transcript } from '../../src/types/transcript.js';
 
 function createTranscript(overrides: Partial<Transcript> = {}): Transcript {
@@ -543,5 +548,158 @@ describe('createNormalizer', () => {
     const normalized = normalizer(transcript);
 
     expect(normalized.speakers[0]?.name).toBe('Resolved: Original');
+  });
+});
+
+describe('normalizeTranscripts', () => {
+  it('yields BatchResult for each transcript', async () => {
+    const transcripts = [
+      createTranscript({ id: 'id1', title: 'Meeting 1' }),
+      createTranscript({ id: 'id2', title: 'Meeting 2' }),
+    ];
+
+    const results: Array<{ item: Transcript; result?: unknown; error?: Error }> = [];
+    for await (const result of normalizeTranscripts(transcripts)) {
+      results.push(result);
+    }
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.result?.id).toBe('fireflies:id1');
+    expect(results[1]?.result?.id).toBe('fireflies:id2');
+    expect(results[0]?.item.id).toBe('id1');
+    expect(results[1]?.item.id).toBe('id2');
+  });
+
+  it('handles empty array', async () => {
+    const results: Array<{ item: Transcript; result?: unknown; error?: Error }> = [];
+    for await (const result of normalizeTranscripts([])) {
+      results.push(result);
+    }
+
+    expect(results).toHaveLength(0);
+  });
+
+  it('handles async iterable input', async () => {
+    async function* generateTranscripts() {
+      yield createTranscript({ id: 'async1' });
+      yield createTranscript({ id: 'async2' });
+    }
+
+    const results: Array<{ item: Transcript; result?: unknown; error?: Error }> = [];
+    for await (const result of normalizeTranscripts(generateTranscripts())) {
+      results.push(result);
+    }
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.result?.id).toBe('fireflies:async1');
+    expect(results[1]?.result?.id).toBe('fireflies:async2');
+  });
+
+  it('applies options to all transcripts', async () => {
+    const transcripts = [
+      createTranscript({
+        id: 'opt1',
+        sentences: [createSentence({ start_time: '10.0' })],
+      }),
+      createTranscript({
+        id: 'opt2',
+        sentences: [createSentence({ start_time: '20.0' })],
+      }),
+    ];
+
+    const results: Array<{ item: Transcript; result?: unknown; error?: Error }> = [];
+    for await (const result of normalizeTranscripts(transcripts, {
+      timeUnit: 'milliseconds',
+    })) {
+      results.push(result);
+    }
+
+    expect(results[0]?.result?.sentences[0]?.startTime).toBe(10000);
+    expect(results[1]?.result?.sentences[0]?.startTime).toBe(20000);
+  });
+
+  it('captures errors without stopping iteration', async () => {
+    // Create a custom transcript that will cause an error during normalization
+    // We simulate this by passing a transcript with a property that throws
+    const goodTranscript1 = createTranscript({ id: 'good1' });
+    const goodTranscript2 = createTranscript({ id: 'good2' });
+
+    // A transcript with a getter that throws - this simulates a runtime error
+    const badTranscript = createTranscript({ id: 'bad' });
+    Object.defineProperty(badTranscript, 'duration', {
+      get() {
+        throw new Error('Simulated error');
+      },
+    });
+
+    const results: Array<{ item: Transcript; result?: unknown; error?: Error }> = [];
+    for await (const result of normalizeTranscripts([
+      goodTranscript1,
+      badTranscript,
+      goodTranscript2,
+    ])) {
+      results.push(result);
+    }
+
+    expect(results).toHaveLength(3);
+    expect(results[0]?.result?.id).toBe('fireflies:good1');
+    expect(results[1]?.error).toBeDefined();
+    expect(results[1]?.error?.message).toBe('Simulated error');
+    expect(results[2]?.result?.id).toBe('fireflies:good2');
+  });
+});
+
+describe('normalizeTranscriptsAll', () => {
+  it('returns array of BatchResults', async () => {
+    const transcripts = [createTranscript({ id: 'all1' }), createTranscript({ id: 'all2' })];
+
+    const results = await normalizeTranscriptsAll(transcripts);
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.result?.id).toBe('fireflies:all1');
+    expect(results[1]?.result?.id).toBe('fireflies:all2');
+  });
+
+  it('preserves order', async () => {
+    const transcripts = [
+      createTranscript({ id: 'order-z' }),
+      createTranscript({ id: 'order-a' }),
+      createTranscript({ id: 'order-m' }),
+    ];
+
+    const results = await normalizeTranscriptsAll(transcripts);
+
+    expect(results[0]?.item.id).toBe('order-z');
+    expect(results[1]?.item.id).toBe('order-a');
+    expect(results[2]?.item.id).toBe('order-m');
+  });
+
+  it('handles async iterable input', async () => {
+    async function* generateTranscripts() {
+      yield createTranscript({ id: 'collect1' });
+      yield createTranscript({ id: 'collect2' });
+    }
+
+    const results = await normalizeTranscriptsAll(generateTranscripts());
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.result?.id).toBe('fireflies:collect1');
+    expect(results[1]?.result?.id).toBe('fireflies:collect2');
+  });
+
+  it('collects errors alongside successes', async () => {
+    const goodTranscript = createTranscript({ id: 'good' });
+    const badTranscript = createTranscript({ id: 'bad' });
+    Object.defineProperty(badTranscript, 'duration', {
+      get() {
+        throw new Error('Collect error');
+      },
+    });
+
+    const results = await normalizeTranscriptsAll([goodTranscript, badTranscript]);
+
+    expect(results).toHaveLength(2);
+    expect(results[0]?.result).toBeDefined();
+    expect(results[1]?.error?.message).toBe('Collect error');
   });
 });
