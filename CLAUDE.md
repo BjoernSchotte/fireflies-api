@@ -10,7 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **No `any` types** without explicit justification in a comment explaining why.
 - **Types exported from index.ts only.** Consumers import from `'fireflies-api'`, never from internal paths.
 - **Functional core, imperative shell.** Pure business logic in core modules, I/O and side effects at the edges.
-- **Package functions are first-class. CLI wraps package functions.** SDK methods and helpers should be fully functional standalone. CLI commands are thin wrappers that parse args, call SDK, and format output.
+- **Package functions are first-class. CLI wraps package functions.** All business logic lives in the SDK package—never in the CLI. A developer using `npm install fireflies-api` must get 100% of the functionality. CLI commands are thin wrappers: parse args → call SDK/helpers → format output. No feature should require using the CLI to access it.
+  - **SDK methods** (`client.transcripts.search()`): Orchestration, API calls, data aggregation
+  - **Helpers** (`searchTranscript()`, `analyzeSpeakers()`): Pure business logic, reusable, fully testable
+  - **CLI**: Just one consumer of the SDK, not a privileged one
 - **Live E2E tests require user approval.** Before running, present tests grouped by: (1) read-only and (2) write operations. Ask user which to run. Never list or run delete tests unless user explicitly asks.
 
 ## Test-Driven Development (TDD) - Mandatory
