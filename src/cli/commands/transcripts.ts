@@ -5,6 +5,7 @@ import { getClient, getOutputFormat } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output, outputActionItems, outputSpeakerAnalytics } from '../utils/output.js';
+import { formatDuration } from '../utils/parse.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -61,11 +62,13 @@ export function registerTranscriptsCommand(program: Command): void {
           channel_id: opts.channel,
         });
 
+        // Use human-readable duration for table/plain, rounded seconds for data formats
+        const useHumanDuration = format === 'table' || format === 'plain';
         const formatted = transcripts.map((t) => ({
           id: t.id,
           title: t.title,
           date: t.dateString,
-          duration: t.duration,
+          duration: useHumanDuration ? formatDuration(t.duration) : Math.round(t.duration),
           organizer: t.organizer_email,
         }));
 

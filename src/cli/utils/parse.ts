@@ -1,6 +1,38 @@
 import type { UploadAudioAttendee } from '../../types/params.js';
 
 /**
+ * Format duration in seconds to human-readable string.
+ * @param seconds - Duration in seconds (can be fractional)
+ * @returns Human-readable string like "1h 30m", "5m 20s", "45s"
+ */
+export function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return '0s';
+  }
+
+  const totalSeconds = Math.round(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  if (hours > 0) {
+    if (minutes > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${hours}h`;
+  }
+
+  if (minutes > 0) {
+    if (secs > 0) {
+      return `${minutes}m ${secs}s`;
+    }
+    return `${minutes}m`;
+  }
+
+  return `${secs}s`;
+}
+
+/**
  * Parse time string (supports seconds or MM:SS or HH:MM:SS format).
  * @returns Time in seconds
  */

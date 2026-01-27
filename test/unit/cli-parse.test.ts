@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatDuration,
   parseAttendee,
   parseTime,
   validatePrivacy,
@@ -99,6 +100,41 @@ describe('CLI parse utilities', () => {
       expect(validateRole('superuser')).toBeNull();
       expect(validateRole('')).toBeNull();
       expect(validateRole('ADMIN')).toBeNull(); // case-sensitive
+    });
+  });
+
+  describe('formatDuration', () => {
+    it('formats seconds under a minute', () => {
+      expect(formatDuration(0)).toBe('0s');
+      expect(formatDuration(1)).toBe('1s');
+      expect(formatDuration(45)).toBe('45s');
+      expect(formatDuration(59)).toBe('59s');
+    });
+
+    it('formats minutes under an hour', () => {
+      expect(formatDuration(60)).toBe('1m');
+      expect(formatDuration(90)).toBe('1m 30s');
+      expect(formatDuration(120)).toBe('2m');
+      expect(formatDuration(3599)).toBe('59m 59s');
+    });
+
+    it('formats hours', () => {
+      expect(formatDuration(3600)).toBe('1h');
+      expect(formatDuration(3660)).toBe('1h 1m');
+      expect(formatDuration(3661)).toBe('1h 1m');
+      expect(formatDuration(5400)).toBe('1h 30m');
+      expect(formatDuration(7200)).toBe('2h');
+    });
+
+    it('rounds floating point seconds', () => {
+      expect(formatDuration(10.850000381469727)).toBe('11s');
+      expect(formatDuration(39.849998474121094)).toBe('40s');
+      expect(formatDuration(66.7300033569336)).toBe('1m 7s');
+    });
+
+    it('handles edge cases', () => {
+      expect(formatDuration(-1)).toBe('0s');
+      expect(formatDuration(Number.NaN)).toBe('0s');
     });
   });
 });
