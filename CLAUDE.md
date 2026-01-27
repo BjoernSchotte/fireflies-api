@@ -5,26 +5,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Critical Rules
 
 - **NEVER commit or push without explicit user approval.** Always ask first before any git commit or push operation.
-- **ALWAYS follow the test pyramid defined in `specs/ROADMAP.md`.** No mocks - use unit tests for pure functions, recorded fixtures for API integration, and optional live E2E tests.
+- **ALWAYS follow TDD and the test pyramid in `specs/ROADMAP.md`.** Write failing tests first, then implement. No mocks, no fakes - use unit tests for pure functions, recorded fixtures for API integration, and E2E tests only when user requests.
 - **Conventional commits required.** Format: `type(scope): description`. Types: feat, fix, docs, refactor, test, chore. Always include `Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>` footer.
 - **No `any` types** without explicit justification in a comment explaining why.
 - **Types exported from index.ts only.** Consumers import from `'fireflies-api'`, never from internal paths.
 - **Functional core, imperative shell.** Pure business logic in core modules, I/O and side effects at the edges.
-- **Live tests MUST be non-destructive.** Live E2E tests should only read data, never create/update/delete. This protects real user data when running against production APIs.
+- **Live E2E tests require user approval.** Before running, present tests grouped by: (1) read-only and (2) write operations. Ask user which to run. Never list or run delete tests unless user explicitly asks.
+
+## Test-Driven Development (TDD) - Mandatory
+
+**The Red-Green-Refactor cycle is non-negotiable:**
+
+1. **RED:** Write a failing test first. Run it. Confirm it fails for the expected reason.
+2. **GREEN:** Write the code necessary to make the test pass.
+3. **REFACTOR:** Clean up while keeping tests green.
+
+**Strict ordering:**
+- Tests MUST be written before implementation code
+- Never write implementation code "to be tested later"
+- If you find yourself writing code without a failing test, stop and write the test first
+
+**No mocks. No fakes. Tests must not lie.**
+- Unit tests: Test pure functions with real inputs/outputs
+- Integration tests: Use recorded fixtures (real API responses captured once)
+- E2E tests: Hit real services. Present tests grouped by read-only and write operations, ask user for approval. Never list or run delete tests unless user explicitly asks.
+- If no compliant approach seems possible, explain the constraint and ask the user before proceeding
+
+**Why no mocks?**
+- Mocks can pass while production breaks (interface drift)
+- Mocks test implementation details, not behavior
+- Mocks make refactoring painful
+- A passing mock-heavy test suite provides false confidence
+
+**Test file naming:** `*.test.ts` colocated with source, or in `__tests__/` directory.
 
 ## Code Style
 
-- **Function length:** Aim for <50 lines. Hard limit 250 lines - if longer, refactor.
+- **Function length:** Aim for <50 lines. Over 100 lines requires refactoring.
+- **File length:** Aim for <400 lines. Over 600 lines requires refactoring.
+- **Single responsibility:** Each function/module does ONE thing. If you need "and" to describe it, split it.
+- **Low complexity:** Minimize nesting and branches. Cyclomatic complexity >10 is a smell.
+- **Readable without scrolling:** A function should be understandable without jumping around.
 - **Guard clauses:** Early returns over nested conditionals.
 - **Error messages include context:** Not "Failed" but "Failed to fetch transcript {id}: {status} {message}".
 - **JSDoc on all public APIs:** Shows in IDE tooltips, serves as documentation.
 
 ## Quality Gates (before requesting commit approval)
 
+- [ ] TDD followed (red-green-refactor cycle)
 - [ ] `npm test` passes
 - [ ] `npm run typecheck` passes
 - [ ] `npm run check` (biome) passes
 - [ ] No `any` without justification
+- [ ] No mocks or fakes in test code
 - [ ] Public API changes have JSDoc updates
 - [ ] Changelog updated if user-facing change
 
@@ -50,7 +83,12 @@ npm run typecheck  # TypeScript type checking
 
 ## Live E2E Tests
 
-After implementing new features, run non-destructive live E2E tests against the real Fireflies API:
+Before running E2E tests:
+1. Present tests in two groups:
+   - **Read-only:** list, get, fetch operations (non-destructive)
+   - **Write:** create, update operations
+2. Ask the user which groups/tests to run
+3. Never list or run delete tests unless user explicitly requests them
 
 ```bash
 # Ensure .env contains FIREFLIES_API_KEY (user provides their key)
@@ -59,7 +97,8 @@ export $(grep -v '^#' .env | xargs) && LIVE_TEST=1 npm run test:live
 
 **Requirements:**
 - `.env` file with `FIREFLIES_API_KEY=your-api-key`
-- Tests are READ-ONLY: only list/get operations, never create/update/delete
+- User approval required before running any E2E tests
+- Delete tests: hidden by default, only shown/run when user explicitly asks
 - Some tests may be skipped based on account plan (e.g., video requires Business+)
 
 ## Architecture
