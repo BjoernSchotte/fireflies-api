@@ -93,10 +93,11 @@ describe.skipIf(!SHOULD_RUN)('M3 Live E2E Tests', () => {
         return;
       }
 
-      const bite = await client.bites.get(bites[0]!.id);
+      const firstBite = bites[0];
+      const bite = await client.bites.get(firstBite.id);
 
       expect(bite).toBeDefined();
-      expect(bite.id).toBe(bites[0]!.id);
+      expect(bite.id).toBe(firstBite.id);
 
       console.log(`Got bite: ${bite.name}`);
       console.log(`  - captions: ${bite.captions?.length ?? 0}`);
@@ -164,7 +165,7 @@ describe.skipIf(!SHOULD_RUN)('M3 Live E2E Tests', () => {
         return;
       }
 
-      const transcriptId = transcripts[0]!.id;
+      const transcriptId = transcripts[0].id;
       const outputs = await client.aiApps.list({ transcript_id: transcriptId, limit: 5 });
 
       expect(Array.isArray(outputs)).toBe(true);
@@ -189,7 +190,7 @@ describe.skipIf(!SHOULD_RUN)('M3 Live E2E Tests', () => {
       console.log(`User has ${transcripts.length} recent transcripts`);
 
       if (transcripts.length > 0) {
-        const transcript = transcripts[0]!;
+        const transcript = transcripts[0];
         console.log(`\nFirst transcript: "${transcript.title}"`);
 
         // Get bites for this transcript

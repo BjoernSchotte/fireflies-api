@@ -55,7 +55,7 @@ describe('CLI date utilities', () => {
       const result = resolveDateRange({ today: true });
       expect(result.fromDate).toBeDefined();
       expect(result.toDate).toBeUndefined();
-      const date = new Date(result.fromDate!);
+      const date = new Date(result.fromDate as string);
       expect(date.getDate()).toBe(27);
     });
 
@@ -63,28 +63,28 @@ describe('CLI date utilities', () => {
       const result = resolveDateRange({ yesterday: true });
       expect(result.fromDate).toBeDefined();
       expect(result.toDate).toBeDefined();
-      const from = new Date(result.fromDate!);
+      const from = new Date(result.fromDate as string);
       expect(from.getDate()).toBe(26);
     });
 
     it('returns fromDate for --last-week', () => {
       const result = resolveDateRange({ lastWeek: true });
       expect(result.fromDate).toBeDefined();
-      const date = new Date(result.fromDate!);
+      const date = new Date(result.fromDate as string);
       expect(date.getDate()).toBe(20); // 7 days ago
     });
 
     it('returns fromDate for --last-month', () => {
       const result = resolveDateRange({ lastMonth: true });
       expect(result.fromDate).toBeDefined();
-      const date = new Date(result.fromDate!);
+      const date = new Date(result.fromDate as string);
       expect(date.getMonth()).toBe(11); // December (30 days ago from Jan 27)
     });
 
     it('returns fromDate for --days N', () => {
       const result = resolveDateRange({ days: '14' });
       expect(result.fromDate).toBeDefined();
-      const date = new Date(result.fromDate!);
+      const date = new Date(result.fromDate as string);
       expect(date.getDate()).toBe(13); // 14 days ago
     });
 
@@ -120,7 +120,7 @@ describe('CLI date utilities', () => {
         to: '2026-01-15',
       });
       // Should use today, not explicit dates
-      const date = new Date(result.fromDate!);
+      const date = new Date(result.fromDate as string);
       expect(date.getDate()).toBe(27);
       expect(result.toDate).toBeUndefined();
     });
