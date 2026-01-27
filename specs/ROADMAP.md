@@ -133,10 +133,10 @@ We avoid mocks because they lie. Instead:
   - [x] README.md with examples
   - [ ] API documentation (TypeDoc or similar)
   - [x] Migration guide from official SDK
-- [ ] Examples
-  - [ ] `examples/basic-usage.ts`
-  - [ ] `examples/realtime-stream.ts`
-  - [ ] `examples/multi-user.ts`
+- [x] Examples
+  - [x] `examples/basic-usage.ts`
+  - [x] `examples/realtime-stream.ts`
+  - [x] `examples/multi-user.ts`
 - [x] CI/CD
   - [x] GitHub Actions for test/lint/build
   - [x] npm publish workflow
@@ -153,13 +153,12 @@ We avoid mocks because they lie. Instead:
 ## Future Considerations (post v1.0.0)
 
 - AskFred API integration (conversational AI queries)
-- Webhook helpers
+- Webhook middleware (Express, Fastify, Hono handlers with signature verification) ✅
 - Rate limit tracking and adaptive throttling
 - Browser bundle (if demand exists)
 - Speaker analytics helper (talk time %, participation metrics, interruption counts) ✅
 - Action item extractor helper (parse action items from summary with assignees/due dates) ✅
-- CLI transcript search command (`fireflies search <query>` across all transcripts)
-- CLI meeting insights command (quick stats: avg duration, busiest days, top participants)
-- CLI `--last-month` shortcut for transcripts list
-- CLI action items Markdown export (checklist format for Notion/docs)
-- Examples completion (`basic-usage.ts`, `realtime-stream.ts`, `multi-user.ts`)
+- CLI transcript search command (`fireflies search <query>` across all transcripts) ✅
+- CLI meeting insights command (quick stats: avg duration, busiest days, top participants) ✅
+- CLI `--last-month` shortcut for transcripts list ✅
+- CLI action items Markdown export (checklist format for Notion/docs) ✅
