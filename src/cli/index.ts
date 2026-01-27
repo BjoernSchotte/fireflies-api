@@ -8,6 +8,7 @@ import { registerBitesCommand } from './commands/bites.js';
 import { registerExportCommand } from './commands/export.js';
 import { registerMeetingsCommand } from './commands/meetings.js';
 import { registerRealtimeCommand } from './commands/realtime.js';
+import { registerSearchCommand } from './commands/search.js';
 import { registerTranscriptsCommand } from './commands/transcripts.js';
 import { registerUsersCommand } from './commands/users.js';
 
@@ -36,6 +37,7 @@ program
 
 // Register all commands
 registerTranscriptsCommand(program);
+registerSearchCommand(program);
 registerMeetingsCommand(program);
 registerUsersCommand(program);
 registerBitesCommand(program);

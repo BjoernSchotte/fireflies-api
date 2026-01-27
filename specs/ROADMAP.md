@@ -156,3 +156,10 @@ We avoid mocks because they lie. Instead:
 - Webhook helpers
 - Rate limit tracking and adaptive throttling
 - Browser bundle (if demand exists)
+- Speaker analytics helper (talk time %, participation metrics, interruption counts) ✅
+- Action item extractor helper (parse action items from summary with assignees/due dates) ✅
+- CLI transcript search command (`fireflies search <query>` across all transcripts)
+- CLI meeting insights command (quick stats: avg duration, busiest days, top participants)
+- CLI `--last-month` shortcut for transcripts list
+- CLI action items Markdown export (checklist format for Notion/docs)
+- Examples completion (`basic-usage.ts`, `realtime-stream.ts`, `multi-user.ts`)

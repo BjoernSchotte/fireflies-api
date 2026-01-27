@@ -59,6 +59,7 @@ export {
   type MultiUserTranscript,
 } from './helpers/multi-user.js';
 export { collectAll, paginate } from './helpers/pagination.js';
+export { searchTranscript } from './helpers/search.js';
 export {
   analyzeSpeakers,
   type SpeakerAnalytics,
@@ -66,7 +67,6 @@ export {
   type SpeakerStats,
 } from './helpers/speaker-analytics.js';
 export { getMeetingVideos, hasVideo, type TranscriptWithVideo } from './helpers/videos.js';
-
 // Realtime
 export type { RealtimeAPI } from './realtime/api.js';
 export { RealtimeStream } from './realtime/stream.js';
@@ -93,14 +93,12 @@ export type {
   RetryConfig,
   ThrottleConfig,
 } from './types/config.js';
-
 // Meeting types
 export type {
   ActiveMeeting,
   MeetingPrivacy,
   MeetingState,
 } from './types/meeting.js';
-
 // Parameter types
 export type {
   ActiveMeetingsParams,
@@ -114,6 +112,13 @@ export type {
   UploadAudioAttendee,
   UploadAudioParams,
 } from './types/params.js';
+// Search types
+export type {
+  SearchMatch,
+  SearchParams,
+  SearchResults,
+  SearchTranscriptOptions,
+} from './types/search.js';
 
 // Transcript types
 export type {

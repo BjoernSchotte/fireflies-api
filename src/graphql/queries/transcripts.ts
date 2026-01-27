@@ -1,5 +1,7 @@
 import { paginate } from '../../helpers/pagination.js';
+import { searchTranscript } from '../../helpers/search.js';
 import type { TranscriptGetParams, TranscriptsListParams } from '../../types/params.js';
+import type { SearchParams, SearchResults } from '../../types/search.js';
 import type {
   AppsPreview,
   Channel,
@@ -239,6 +241,35 @@ export interface TranscriptsAPI {
    * ```
    */
   listAll(params?: Omit<TranscriptsListParams, 'skip' | 'limit'>): AsyncIterable<Transcript>;
+
+  /**
+   * Search across transcripts for matching sentences.
+   *
+   * This method first queries for transcripts matching the keyword,
+   * then fetches each transcript with sentences and searches locally
+   * for detailed matches with speaker filtering, question/task filtering,
+   * and context extraction.
+   *
+   * @param query - The search query string
+   * @param params - Search options including filters and context settings
+   * @returns Search results with matches grouped by transcript
+   *
+   * @example
+   * ```typescript
+   * const results = await client.transcripts.search('budget', {
+   *   speakers: ['Alice'],
+   *   filterQuestions: true,
+   *   fromDate: '2024-01-01',
+   *   contextLines: 2,
+   * });
+   *
+   * console.log(`Found ${results.totalMatches} matches`);
+   * for (const match of results.matches) {
+   *   console.log(`${match.sentence.speakerName}: ${match.sentence.text}`);
+   * }
+   * ```
+   */
+  search(query: string, params?: SearchParams): Promise<SearchResults>;
 }
 
 /**
@@ -346,6 +377,60 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
 
     listAll(params?: Omit<TranscriptsListParams, 'skip' | 'limit'>): AsyncIterable<Transcript> {
       return paginate((skip, limit) => this.list({ ...params, skip, limit }), 50);
+    },
+
+    async search(query: string, params: SearchParams = {}): Promise<SearchResults> {
+      const {
+        caseSensitive = false,
+        scope = 'sentences',
+        speakers,
+        filterQuestions,
+        filterTasks,
+        contextLines = 1,
+        limit,
+        ...listParams
+      } = params;
+
+      // Phase 1: Find matching transcripts via server-side search
+      const transcripts: Transcript[] = [];
+      for await (const t of this.listAll({
+        keyword: query,
+        scope,
+        ...listParams,
+      })) {
+        transcripts.push(t);
+        if (limit && transcripts.length >= limit) break;
+      }
+
+      // Phase 2: Fetch full transcripts and search locally
+      const allMatches: SearchResults['matches'] = [];
+      let transcriptsWithMatches = 0;
+
+      for (const t of transcripts) {
+        const full = await this.get(t.id, { includeSentences: true });
+        const matches = searchTranscript(full, {
+          query,
+          caseSensitive,
+          speakers,
+          filterQuestions,
+          filterTasks,
+          contextLines,
+        });
+
+        if (matches.length > 0) {
+          transcriptsWithMatches++;
+          allMatches.push(...matches);
+        }
+      }
+
+      return {
+        query,
+        options: params,
+        totalMatches: allMatches.length,
+        transcriptsSearched: transcripts.length,
+        transcriptsWithMatches,
+        matches: allMatches,
+      };
     },
   };
 }
