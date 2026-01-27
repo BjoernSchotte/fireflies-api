@@ -1,9 +1,10 @@
 import type { Command } from 'commander';
+import { extractActionItems } from '../../helpers/action-items.js';
 import { analyzeSpeakers } from '../../helpers/speaker-analytics.js';
 import { getClient, getOutputFormat } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
-import { output, outputSpeakerAnalytics } from '../utils/output.js';
+import { output, outputActionItems, outputSpeakerAnalytics } from '../utils/output.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -31,6 +32,7 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--scope <scope>', 'Search scope: title, sentences, all (default: all)')
     .option('--organizer <email>', 'Filter by organizer email (repeatable)', collect, [])
     .option('--participant <email>', 'Filter by participant email (repeatable)', collect, [])
+    .option('--participant-me', 'Only meetings where I am a participant')
     .option('--user-id <id>', 'Filter by user ID')
     .option('--channel <id>', 'Filter by channel ID')
     .action(
@@ -38,6 +40,13 @@ export function registerTranscriptsCommand(program: Command): void {
         const client = getClient(program);
         const format = getOutputFormat(program);
         const { fromDate, toDate } = resolveDateRange(opts);
+
+        // If --participant-me, fetch current user's email and add to participants filter
+        const participants: string[] = [...opts.participant];
+        if (opts.participantMe) {
+          const me = await client.users.me();
+          participants.push(me.email);
+        }
 
         const transcripts = await client.transcripts.list({
           limit: Number.parseInt(opts.limit, 10),
@@ -47,7 +56,7 @@ export function registerTranscriptsCommand(program: Command): void {
           keyword: opts.keyword,
           scope: opts.scope,
           organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
-          participants: opts.participant.length > 0 ? opts.participant : undefined,
+          participants: participants.length > 0 ? participants : undefined,
           user_id: opts.userId,
           channel_id: opts.channel,
         });
@@ -73,6 +82,7 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--no-summary', 'Exclude summary')
     .option('--speakers', 'Include speaker analytics')
     .option('--no-merge', 'Disable speaker merging (with --speakers)')
+    .option('--action-items', 'Include extracted action items')
     .action(
       withErrorHandling(async (id: string, opts) => {
         const client = getClient(program);
@@ -80,17 +90,24 @@ export function registerTranscriptsCommand(program: Command): void {
 
         const transcript = await client.transcripts.get(id, {
           includeSentences: opts.sentences,
-          includeSummary: opts.summary,
+          includeSummary: opts.summary || opts.actionItems,
         });
+
+        let result: Record<string, unknown> = { ...transcript };
 
         if (opts.speakers) {
           const analytics = analyzeSpeakers(transcript, {
             mergeSpeakersByName: opts.merge !== false,
           });
-          output({ ...transcript, speakerAnalytics: analytics }, format);
-        } else {
-          output(transcript, format);
+          result = { ...result, speakerAnalytics: analytics };
         }
+
+        if (opts.actionItems) {
+          const actionItems = extractActionItems(transcript);
+          result = { ...result, actionItems };
+        }
+
+        output(result, format);
       })
     );
 
@@ -111,6 +128,32 @@ export function registerTranscriptsCommand(program: Command): void {
         });
 
         outputSpeakerAnalytics(analytics, format);
+      })
+    );
+
+  cmd
+    .command('action-items <id>')
+    .description('Extract action items from a transcript')
+    .option('--no-assignees', 'Skip assignee detection')
+    .option('--no-due-dates', 'Skip due date detection')
+    .option('--include-source', 'Include source sentences from transcript')
+    .action(
+      withErrorHandling(async (id: string, opts) => {
+        const client = getClient(program);
+        const format = getOutputFormat(program);
+
+        const transcript = await client.transcripts.get(id, {
+          includeSummary: true,
+          includeSentences: opts.includeSource,
+        });
+
+        const result = extractActionItems(transcript, {
+          detectAssignees: opts.assignees !== false,
+          detectDueDates: opts.dueDates !== false,
+          includeSourceSentences: opts.includeSource,
+        });
+
+        outputActionItems(result, format);
       })
     );
 

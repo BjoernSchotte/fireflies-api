@@ -34,6 +34,12 @@ export {
   type SpeakerTurn,
   TranscriptAccumulator,
 } from './helpers/accumulator.js';
+export {
+  type ActionItem,
+  type ActionItemOptions,
+  type ActionItemsResult,
+  extractActionItems,
+} from './helpers/action-items.js';
 // Helpers
 export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
 export {

@@ -1,3 +1,4 @@
+import type { ActionItemsResult } from '../../helpers/action-items.js';
 import type { SpeakerAnalytics } from '../../helpers/speaker-analytics.js';
 import type { OutputFormat } from './client.js';
 
@@ -188,4 +189,48 @@ export function outputSpeakerAnalytics(analytics: SpeakerAnalytics, format: Outp
 
   // json, jsonl: full analytics object
   output(analytics, format);
+}
+
+/**
+ * Output action items in the specified format.
+ *
+ * - plain: Human-readable list with assignee and due date
+ * - table/tsv: Flat rows with columns: #, text, assignee, dueDate
+ * - json/jsonl: Full ActionItemsResult object
+ */
+export function outputActionItems(result: ActionItemsResult, format: OutputFormat): void {
+  if (format === 'plain') {
+    const assignedCount = result.assignedItems;
+    writeLine(`Action Items (${result.totalItems} total, ${assignedCount} assigned):`);
+    writeLine('');
+    for (const item of result.items) {
+      writeLine(`${item.lineNumber}. ${item.text}`);
+      const parts: string[] = [];
+      if (item.assignee) {
+        parts.push(`Assignee: ${item.assignee}`);
+      }
+      if (item.dueDate) {
+        parts.push(`Due: ${item.dueDate}`);
+      }
+      if (parts.length > 0) {
+        writeLine(`   ${parts.join(' | ')}`);
+      }
+      writeLine('');
+    }
+    return;
+  }
+
+  if (format === 'table' || format === 'tsv') {
+    const rows = result.items.map((item) => ({
+      '#': item.lineNumber,
+      text: item.text,
+      assignee: item.assignee ?? '-',
+      dueDate: item.dueDate ?? '-',
+    }));
+    output(rows, format);
+    return;
+  }
+
+  // json, jsonl: full result object
+  output(result, format);
 }

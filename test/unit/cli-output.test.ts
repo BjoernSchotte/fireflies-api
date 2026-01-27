@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   output,
+  outputActionItems,
   outputLine,
   outputSpeakerAnalytics,
   writeLine,
 } from '../../src/cli/utils/output.js';
+import type { ActionItemsResult } from '../../src/helpers/action-items.js';
 import type { SpeakerAnalytics } from '../../src/helpers/speaker-analytics.js';
 
 describe('CLI output utilities', () => {
@@ -315,6 +317,104 @@ describe('CLI output utilities', () => {
 
       expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
       expect(stdoutWriteSpy).toHaveBeenCalledWith(`${JSON.stringify(sampleAnalytics)}\n`);
+    });
+  });
+
+  describe('outputActionItems', () => {
+    const sampleActionItems: ActionItemsResult = {
+      items: [
+        {
+          text: 'Complete API documentation',
+          assignee: 'Alice',
+          dueDate: 'Friday',
+          lineNumber: 1,
+        },
+        {
+          text: 'Review pull request',
+          assignee: 'Bob',
+          lineNumber: 2,
+        },
+        {
+          text: 'Schedule follow-up call',
+          dueDate: 'tomorrow',
+          lineNumber: 3,
+        },
+      ],
+      totalItems: 3,
+      assignedItems: 2,
+      datedItems: 2,
+      assignees: ['Alice', 'Bob'],
+    };
+
+    it('outputs plain format as human-readable list', () => {
+      outputActionItems(sampleActionItems, 'plain');
+
+      const calls = stdoutWriteSpy.mock.calls.map((c) => c[0]);
+      // Should have header, empty line, and entries for each item
+      expect(calls.length).toBeGreaterThanOrEqual(4);
+      expect(calls[0]).toContain('3 total');
+      expect(calls[0]).toContain('2 assigned');
+      // First item
+      const aliceLine = calls.find((c) => c.includes('Complete API documentation'));
+      expect(aliceLine).toBeDefined();
+      const aliceDetails = calls.find((c) => c.includes('Alice') && c.includes('Friday'));
+      expect(aliceDetails).toBeDefined();
+    });
+
+    it('outputs table format as flat rows', () => {
+      outputActionItems(sampleActionItems, 'table');
+
+      const calls = consoleLogSpy.mock.calls.map((c) => c[0]);
+      // Header, separator, then rows
+      expect(calls.length).toBeGreaterThanOrEqual(5);
+      expect(calls[0]).toContain('#');
+      expect(calls[0]).toContain('text');
+      expect(calls[0]).toContain('assignee');
+      expect(calls[0]).toContain('dueDate');
+      // Alice row
+      expect(calls[2]).toContain('Alice');
+      expect(calls[2]).toContain('Friday');
+      // Bob row
+      expect(calls[3]).toContain('Bob');
+    });
+
+    it('outputs tsv format as flat rows', () => {
+      outputActionItems(sampleActionItems, 'tsv');
+
+      const calls = stdoutWriteSpy.mock.calls.map((c) => c[0]);
+      expect(calls.length).toBe(4); // header + 3 rows
+      expect(calls[0]).toBe('#\ttext\tassignee\tdueDate\n');
+      expect(calls[1]).toContain('Alice');
+      expect(calls[1]).toContain('Friday');
+    });
+
+    it('outputs json format as full result object', () => {
+      outputActionItems(sampleActionItems, 'json');
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(JSON.stringify(sampleActionItems, null, 2));
+    });
+
+    it('outputs jsonl format as full result object', () => {
+      outputActionItems(sampleActionItems, 'jsonl');
+
+      expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(`${JSON.stringify(sampleActionItems)}\n`);
+    });
+
+    it('shows dash for missing assignee and dueDate in table', () => {
+      const result: ActionItemsResult = {
+        items: [{ text: 'Simple task', lineNumber: 1 }],
+        totalItems: 1,
+        assignedItems: 0,
+        datedItems: 0,
+        assignees: [],
+      };
+
+      outputActionItems(result, 'table');
+
+      const calls = consoleLogSpy.mock.calls.map((c) => c[0]);
+      // Row should have dashes for missing values
+      expect(calls[2]).toContain('-');
     });
   });
 });
