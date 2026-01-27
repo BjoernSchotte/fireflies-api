@@ -1,8 +1,9 @@
 import type { Command } from 'commander';
+import { analyzeSpeakers } from '../../helpers/speaker-analytics.js';
 import { getClient, getOutputFormat } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
-import { output } from '../utils/output.js';
+import { output, outputSpeakerAnalytics } from '../utils/output.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -70,6 +71,8 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--no-sentences', 'Exclude sentences')
     .option('--summary', 'Include summary', true)
     .option('--no-summary', 'Exclude summary')
+    .option('--speakers', 'Include speaker analytics')
+    .option('--no-merge', 'Disable speaker merging (with --speakers)')
     .action(
       withErrorHandling(async (id: string, opts) => {
         const client = getClient(program);
@@ -80,7 +83,34 @@ export function registerTranscriptsCommand(program: Command): void {
           includeSummary: opts.summary,
         });
 
-        output(transcript, format);
+        if (opts.speakers) {
+          const analytics = analyzeSpeakers(transcript, {
+            mergeSpeakersByName: opts.merge !== false,
+          });
+          output({ ...transcript, speakerAnalytics: analytics }, format);
+        } else {
+          output(transcript, format);
+        }
+      })
+    );
+
+  cmd
+    .command('speakers <id>')
+    .description('Analyze speaker participation in a transcript')
+    .option('--no-merge', 'Show separate entries for speakers with same name')
+    .option('--raw-percentages', 'Show decimal percentages')
+    .action(
+      withErrorHandling(async (id: string, opts) => {
+        const client = getClient(program);
+        const format = getOutputFormat(program);
+
+        const transcript = await client.transcripts.get(id);
+        const analytics = analyzeSpeakers(transcript, {
+          mergeSpeakersByName: opts.merge !== false,
+          roundPercentages: !opts.rawPercentages,
+        });
+
+        outputSpeakerAnalytics(analytics, format);
       })
     );
 

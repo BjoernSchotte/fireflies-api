@@ -1,3 +1,4 @@
+import type { SpeakerAnalytics } from '../../helpers/speaker-analytics.js';
 import type { OutputFormat } from './client.js';
 
 /**
@@ -146,4 +147,45 @@ function formatTsvValue(value: unknown): string {
     return JSON.stringify(value);
   }
   return String(value).replace(/\t/g, ' ').replace(/\n/g, ' ');
+}
+
+/**
+ * Output speaker analytics in the specified format.
+ *
+ * - plain: Human-readable summary with meeting overview and speaker details
+ * - table/tsv: Flat speaker rows suitable for tabular display
+ * - json/jsonl: Full analytics object
+ */
+export function outputSpeakerAnalytics(analytics: SpeakerAnalytics, format: OutputFormat): void {
+  if (format === 'plain') {
+    const mins = Math.round(analytics.totalDuration / 60);
+    writeLine(
+      `Meeting: ${mins} min, ${analytics.speakers.length} speakers, balance: ${analytics.balance}`
+    );
+    writeLine(`Dominant: ${analytics.dominantSpeaker} (${analytics.dominantSpeakerPercentage}%)`);
+    writeLine('');
+    for (const s of analytics.speakers) {
+      writeLine(
+        `${s.name}: ${Math.round(s.talkTime)}s (${s.talkTimePercentage}%) | ${s.wordCount} words | ${s.wordsPerMinute} wpm | ${s.turnCount} turns`
+      );
+    }
+    return;
+  }
+
+  if (format === 'table' || format === 'tsv') {
+    const rows = analytics.speakers.map((s) => ({
+      name: s.name,
+      talkTime: Math.round(s.talkTime),
+      'talkTime%': s.talkTimePercentage,
+      words: s.wordCount,
+      wpm: s.wordsPerMinute,
+      sentences: s.sentenceCount,
+      turns: s.turnCount,
+    }));
+    output(rows, format);
+    return;
+  }
+
+  // json, jsonl: full analytics object
+  output(analytics, format);
 }

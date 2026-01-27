@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { output, outputLine, writeLine } from '../../src/cli/utils/output.js';
+import {
+  output,
+  outputLine,
+  outputSpeakerAnalytics,
+  writeLine,
+} from '../../src/cli/utils/output.js';
+import type { SpeakerAnalytics } from '../../src/helpers/speaker-analytics.js';
 
 describe('CLI output utilities', () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
@@ -211,6 +217,104 @@ describe('CLI output utilities', () => {
     it('outputs nothing for non-array data', () => {
       output({ id: '1' }, 'tsv');
       expect(stdoutWriteSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('outputSpeakerAnalytics', () => {
+    const sampleAnalytics: SpeakerAnalytics = {
+      speakers: [
+        {
+          name: 'Alice',
+          id: 'speaker-1',
+          talkTime: 240,
+          talkTimePercentage: 57,
+          sentenceCount: 20,
+          wordCount: 715,
+          wordsPerMinute: 179,
+          averageSentenceLength: 35.75,
+          turnCount: 5,
+        },
+        {
+          name: 'Bob',
+          id: 'speaker-2',
+          talkTime: 181,
+          talkTimePercentage: 43,
+          sentenceCount: 15,
+          wordCount: 462,
+          wordsPerMinute: 154,
+          averageSentenceLength: 30.8,
+          turnCount: 3,
+        },
+      ],
+      totalDuration: 780,
+      totalTalkTime: 421,
+      totalSentences: 35,
+      totalWords: 1177,
+      dominantSpeaker: 'Alice',
+      dominantSpeakerPercentage: 57,
+      balance: 'unbalanced',
+    };
+
+    it('outputs plain format as human-readable summary', () => {
+      outputSpeakerAnalytics(sampleAnalytics, 'plain');
+
+      const calls = stdoutWriteSpy.mock.calls.map((c) => c[0]);
+      // Should have meeting overview, dominant speaker line, empty line, and speaker lines
+      expect(calls.length).toBeGreaterThanOrEqual(4);
+      expect(calls[0]).toContain('13 min'); // 780 / 60 rounded
+      expect(calls[0]).toContain('2 speakers');
+      expect(calls[0]).toContain('unbalanced');
+      expect(calls[1]).toContain('Alice');
+      expect(calls[1]).toContain('57%');
+      // Speaker details
+      const aliceLine = calls.find((c) => c.includes('Alice:'));
+      expect(aliceLine).toContain('240s');
+      expect(aliceLine).toContain('715 words');
+      expect(aliceLine).toContain('179 wpm');
+      expect(aliceLine).toContain('5 turns');
+    });
+
+    it('outputs table format as flat speaker rows', () => {
+      outputSpeakerAnalytics(sampleAnalytics, 'table');
+
+      const calls = consoleLogSpy.mock.calls.map((c) => c[0]);
+      // Header, separator, then rows
+      expect(calls.length).toBeGreaterThanOrEqual(4);
+      expect(calls[0]).toContain('name');
+      expect(calls[0]).toContain('talkTime');
+      expect(calls[0]).toContain('words');
+      expect(calls[0]).toContain('wpm');
+      expect(calls[0]).toContain('turns');
+      // Alice row
+      expect(calls[2]).toContain('Alice');
+      expect(calls[2]).toContain('240');
+      expect(calls[2]).toContain('57');
+      // Bob row
+      expect(calls[3]).toContain('Bob');
+      expect(calls[3]).toContain('181');
+    });
+
+    it('outputs tsv format as flat speaker rows', () => {
+      outputSpeakerAnalytics(sampleAnalytics, 'tsv');
+
+      const calls = stdoutWriteSpy.mock.calls.map((c) => c[0]);
+      expect(calls.length).toBe(3); // header + 2 rows
+      expect(calls[0]).toBe('name\ttalkTime\ttalkTime%\twords\twpm\tsentences\tturns\n');
+      expect(calls[1]).toContain('Alice\t240\t57');
+      expect(calls[2]).toContain('Bob\t181\t43');
+    });
+
+    it('outputs json format as full analytics object', () => {
+      outputSpeakerAnalytics(sampleAnalytics, 'json');
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(JSON.stringify(sampleAnalytics, null, 2));
+    });
+
+    it('outputs jsonl format as full analytics object', () => {
+      outputSpeakerAnalytics(sampleAnalytics, 'jsonl');
+
+      expect(stdoutWriteSpy).toHaveBeenCalledTimes(1);
+      expect(stdoutWriteSpy).toHaveBeenCalledWith(`${JSON.stringify(sampleAnalytics)}\n`);
     });
   });
 });
