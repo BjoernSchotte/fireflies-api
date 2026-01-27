@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { FirefliesClient } from '../../client.js';
 
-export type OutputFormat = 'json' | 'table' | 'plain';
+export type OutputFormat = 'json' | 'jsonl' | 'table' | 'tsv' | 'plain';
 
 interface GlobalOptions {
   apiKey?: string;

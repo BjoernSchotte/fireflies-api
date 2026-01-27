@@ -1,15 +1,16 @@
 import type { Command } from 'commander';
-import { getClient } from '../utils/client.js';
+import { getClient, getOutputFormat } from '../utils/client.js';
 import { withErrorHandling } from '../utils/error.js';
+import { outputLine, writeLine } from '../utils/output.js';
 
 export function registerRealtimeCommand(program: Command): void {
   program
     .command('realtime <meeting-id>')
     .description('Stream live transcription to stdout')
-    .option('--format <format>', 'Output format: json, text', 'json')
     .action(
-      withErrorHandling(async (meetingId: string, opts) => {
+      withErrorHandling(async (meetingId: string) => {
         const client = getClient(program);
+        const format = getOutputFormat(program);
 
         // Set up graceful shutdown
         let closing = false;
@@ -26,11 +27,12 @@ export function registerRealtimeCommand(program: Command): void {
         for await (const chunk of client.realtime.stream(meetingId)) {
           if (closing) break;
 
-          if (opts.format === 'text') {
-            console.log(`[${chunk.speaker_name}]: ${chunk.text}`);
+          if (format === 'plain' || format === 'table') {
+            // Human-readable text format
+            writeLine(`[${chunk.speaker_name}]: ${chunk.text}`);
           } else {
-            // JSON format - line-delimited JSON
-            console.log(JSON.stringify(chunk));
+            // json, jsonl, tsv all output line-delimited JSON for streaming
+            outputLine(chunk);
           }
         }
       })
