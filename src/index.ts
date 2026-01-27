@@ -53,6 +53,12 @@ export {
   type MultiUserTranscript,
 } from './helpers/multi-user.js';
 export { collectAll, paginate } from './helpers/pagination.js';
+export {
+  analyzeSpeakers,
+  type SpeakerAnalytics,
+  type SpeakerAnalyticsOptions,
+  type SpeakerStats,
+} from './helpers/speaker-analytics.js';
 export { getMeetingVideos, hasVideo, type TranscriptWithVideo } from './helpers/videos.js';
 
 // Realtime
