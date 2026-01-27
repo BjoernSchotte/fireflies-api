@@ -56,10 +56,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [ ] `npm test` passes
 - [ ] `npm run typecheck` passes
 - [ ] `npm run check` (biome) passes
+- [ ] Pre-existing lint warnings in modified files are fixed
 - [ ] No `any` without justification
 - [ ] No mocks or fakes in test code
 - [ ] Public API changes have JSDoc updates
 - [ ] Changelog updated if user-facing change
+
+**Boy Scout Rule:** When modifying a file, fix pre-existing lint warnings and obvious mechanical issues (unused imports, typos in comments). Don't refactor, rename, or restructure—those deserve separate commits. If unsure whether a fix is mechanical, ask first.
 
 ## Runtime
 
