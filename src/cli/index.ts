@@ -32,7 +32,7 @@ program
   .description('CLI for Fireflies.ai API')
   .version(getVersion())
   .option('-k, --api-key <key>', 'API key (or FIREFLIES_API_KEY env)')
-  .option('-o, --output <format>', 'Output format: json, table, plain', 'json');
+  .option('-o, --output <format>', 'Output format: json, jsonl, table, tsv, plain', 'json');
 
 // Register all commands
 registerTranscriptsCommand(program);
