@@ -22,6 +22,17 @@
  */
 
 export {
+  ActionItemSchema,
+  ActionItemSourceSentenceSchema,
+  ActionItemsResultSchema,
+  parseActionItemsResult,
+  parseSpeakerAnalytics,
+  SpeakerAnalyticsSchema,
+  SpeakerStatsSchema,
+  safeParseActionItemsResult,
+  safeParseSpeakerAnalytics,
+} from './helpers.js';
+export {
   NormalizedAnalyticsSchema,
   NormalizedAttendeeSchema,
   NormalizedChannelSchema,
@@ -33,3 +44,24 @@ export {
   parseNormalizedMeeting,
   safeParseNormalizedMeeting,
 } from './normalized.js';
+export {
+  AIAppOutputSchema,
+  AIFilterSchema,
+  AppsPreviewSchema,
+  ChannelMemberSchema,
+  ChannelSchema,
+  MeetingAnalyticsSchema,
+  MeetingAttendanceSchema,
+  MeetingAttendeeSchema,
+  MeetingInfoSchema,
+  parseTranscript,
+  SentenceSchema,
+  SentimentsSchema,
+  SpeakerSchema,
+  SummarySchema,
+  SummarySectionSchema,
+  SummaryStatusSchema,
+  safeParseTranscript,
+  TranscriptSchema,
+  UserSchema,
+} from './transcript.js';

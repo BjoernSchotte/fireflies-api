@@ -1,6 +1,7 @@
 import type { Command } from 'commander';
 import { extractActionItems } from '../../helpers/action-items.js';
 import { formatActionItemsMarkdown } from '../../helpers/action-items-format.js';
+import { normalizeTranscript } from '../../helpers/normalize.js';
 import { analyzeSpeakers } from '../../helpers/speaker-analytics.js';
 import type {
   ActionItemsFilterOptions,
@@ -93,6 +94,7 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--participant-me', 'Only meetings where I am a participant')
     .option('--user-id <id>', 'Filter by user ID')
     .option('--channel <id>', 'Filter by channel ID')
+    .option('--normalize', 'Output in normalized provider-agnostic format')
     .action(
       withErrorHandling(async (opts) => {
         const client = getClient(program);
@@ -118,6 +120,16 @@ export function registerTranscriptsCommand(program: Command): void {
           user_id: opts.userId,
           channel_id: opts.channel,
         });
+
+        // Normalize requires full transcript data (list returns partial data)
+        if (opts.normalize) {
+          const fullTranscripts = await Promise.all(
+            transcripts.map((t) => client.transcripts.get(t.id))
+          );
+          const normalized = fullTranscripts.map((t) => normalizeTranscript(t));
+          output(normalized, format);
+          return;
+        }
 
         // Use human-readable duration for table/plain, rounded minutes for data formats
         // API returns duration in minutes, convert to seconds for formatDuration

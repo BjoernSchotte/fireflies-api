@@ -12,7 +12,13 @@
 import {
   createNormalizer,
   FirefliesClient,
+  type NormalizedAnalytics,
+  type NormalizedChannel,
   type NormalizedMeeting,
+  type NormalizedParticipant,
+  type NormalizedSentence,
+  type NormalizedSpeaker,
+  type NormalizedSummary,
   normalizeTranscript,
 } from 'fireflies-api';
 
@@ -29,7 +35,7 @@ function printSection(title: string) {
   console.log('='.repeat(60));
 }
 
-function printNormalizedMeeting(meeting: NormalizedMeeting) {
+function printMeetingHeader(meeting: NormalizedMeeting): void {
   console.log(`ID: ${meeting.id}`);
   console.log(`Title: ${meeting.title}`);
   console.log(`Date: ${meeting.date.toISOString()}`);
@@ -37,51 +43,71 @@ function printNormalizedMeeting(meeting: NormalizedMeeting) {
   console.log(`URL: ${meeting.url}`);
   console.log(`Provider: ${meeting.source.provider}`);
   console.log(`Original ID: ${meeting.source.originalId}`);
+}
 
-  console.log(`\nSpeakers (${meeting.speakers.length}):`);
-  for (const speaker of meeting.speakers) {
+function printSpeakers(speakers: NormalizedSpeaker[]): void {
+  console.log(`\nSpeakers (${speakers.length}):`);
+  for (const speaker of speakers) {
     console.log(`  - ${speaker.name} (${speaker.id})`);
   }
+}
 
-  console.log(`\nParticipants (${meeting.participants.length}):`);
-  for (const p of meeting.participants) {
+function printParticipants(participants: NormalizedParticipant[]): void {
+  console.log(`\nParticipants (${participants.length}):`);
+  for (const p of participants) {
     console.log(`  - ${p.name || p.email} [${p.role}]`);
   }
+}
 
-  console.log(`\nSentences: ${meeting.sentences.length} total`);
-  if (meeting.sentences.length > 0) {
-    console.log('First 3 sentences:');
-    for (const s of meeting.sentences.slice(0, 3)) {
-      const sentiment = s.sentiment ? ` [${s.sentiment}]` : '';
-      const question = s.isQuestion ? ' ❓' : '';
-      const action = s.isActionItem ? ' ✅' : '';
-      console.log(
-        `  [${s.startTime.toFixed(1)}s] ${s.speakerName}: "${s.text.slice(0, 50)}..."${sentiment}${question}${action}`
-      );
-    }
-  }
+function printSentencesSample(sentences: NormalizedSentence[], count = 3): void {
+  console.log(`\nSentences: ${sentences.length} total`);
+  if (sentences.length === 0) return;
 
-  if (meeting.summary) {
-    console.log('\nSummary:');
-    if (meeting.summary.overview) {
-      console.log(`  Overview: ${meeting.summary.overview.slice(0, 100)}...`);
-    }
-    if (meeting.summary.keyPoints?.length) {
-      console.log(`  Key Points: ${meeting.summary.keyPoints.length} items`);
-    }
-    if (meeting.summary.topics?.length) {
-      console.log(`  Topics: ${meeting.summary.topics.join(', ')}`);
-    }
+  console.log(`First ${count} sentences:`);
+  for (const s of sentences.slice(0, count)) {
+    const sentiment = s.sentiment ? ` [${s.sentiment}]` : '';
+    const question = s.isQuestion ? ' ❓' : '';
+    const action = s.isActionItem ? ' ✅' : '';
+    console.log(
+      `  [${s.startTime.toFixed(1)}s] ${s.speakerName}: "${s.text.slice(0, 50)}..."${sentiment}${question}${action}`
+    );
   }
+}
 
-  if (meeting.analytics?.sentiments) {
-    const s = meeting.analytics.sentiments;
-    console.log(`\nSentiment: +${s.positive}% / ~${s.neutral}% / -${s.negative}%`);
-  }
+function printSummary(summary: NormalizedSummary | undefined): void {
+  if (!summary) return;
 
-  if (meeting.channels?.length) {
-    console.log(`\nChannels: ${meeting.channels.map((c) => c.title).join(', ')}`);
+  console.log('\nSummary:');
+  if (summary.overview) {
+    console.log(`  Overview: ${summary.overview.slice(0, 100)}...`);
   }
+  if (summary.keyPoints?.length) {
+    console.log(`  Key Points: ${summary.keyPoints.length} items`);
+  }
+  if (summary.topics?.length) {
+    console.log(`  Topics: ${summary.topics.join(', ')}`);
+  }
+}
+
+function printAnalytics(analytics: NormalizedAnalytics | undefined): void {
+  if (!analytics?.sentiments) return;
+  const s = analytics.sentiments;
+  console.log(`\nSentiment: +${s.positive}% / ~${s.neutral}% / -${s.negative}%`);
+}
+
+function printChannels(channels: NormalizedChannel[] | undefined): void {
+  if (!channels?.length) return;
+  console.log(`\nChannels: ${channels.map((c) => c.title).join(', ')}`);
+}
+
+function printNormalizedMeeting(meeting: NormalizedMeeting): void {
+  printMeetingHeader(meeting);
+  printSpeakers(meeting.speakers);
+  printParticipants(meeting.participants);
+  printSentencesSample(meeting.sentences);
+  printSummary(meeting.summary);
+  printAnalytics(meeting.analytics);
+  printChannels(meeting.channels);
 }
 
 async function main() {
