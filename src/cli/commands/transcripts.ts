@@ -1,5 +1,6 @@
 import type { Command } from 'commander';
 import { getClient, getOutputFormat } from '../utils/client.js';
+import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output } from '../utils/output.js';
 
@@ -8,66 +9,6 @@ import { output } from '../utils/output.js';
  */
 function collect(value: string, previous: string[]): string[] {
   return previous.concat([value]);
-}
-
-/**
- * Calculate a date relative to today.
- */
-function daysAgo(days: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString();
-}
-
-/**
- * Get start of today.
- */
-function startOfToday(): string {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString();
-}
-
-interface DateRange {
-  fromDate?: string;
-  toDate?: string;
-}
-
-/**
- * Resolve date range from options, preferring relative dates over explicit ones.
- */
-function resolveDateRange(opts: {
-  from?: string;
-  to?: string;
-  today?: boolean;
-  yesterday?: boolean;
-  lastWeek?: boolean;
-  lastMonth?: boolean;
-  days?: string;
-}): DateRange {
-  // Relative date shortcuts take precedence
-  if (opts.today) {
-    return { fromDate: startOfToday() };
-  }
-  if (opts.yesterday) {
-    return { fromDate: daysAgo(1), toDate: startOfToday() };
-  }
-  if (opts.lastWeek) {
-    return { fromDate: daysAgo(7) };
-  }
-  if (opts.lastMonth) {
-    return { fromDate: daysAgo(30) };
-  }
-  if (opts.days) {
-    const numDays = Number.parseInt(opts.days, 10);
-    if (!Number.isNaN(numDays) && numDays > 0) {
-      return { fromDate: daysAgo(numDays) };
-    }
-  }
-
-  // Fall back to explicit dates
-  return { fromDate: opts.from, toDate: opts.to };
 }
 
 export function registerTranscriptsCommand(program: Command): void {

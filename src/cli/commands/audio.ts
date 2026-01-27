@@ -3,17 +3,7 @@ import type { UploadAudioAttendee } from '../../types/params.js';
 import { getClient, getOutputFormat } from '../utils/client.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output } from '../utils/output.js';
-
-/**
- * Parse attendee string in format "name:email" or just "email".
- */
-function parseAttendee(value: string): UploadAudioAttendee {
-  if (value.includes(':')) {
-    const [displayName, email] = value.split(':');
-    return { displayName, email };
-  }
-  return { email: value };
-}
+import { parseAttendee } from '../utils/parse.js';
 
 /**
  * Collect repeatable option values into an array.

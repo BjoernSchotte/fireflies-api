@@ -2,41 +2,18 @@ import type { Command } from 'commander';
 import { getClient, getOutputFormat } from '../utils/client.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output } from '../utils/output.js';
-
-type Privacy = 'public' | 'team' | 'participants';
+import { type BitePrivacy, parseTime, validatePrivacy } from '../utils/parse.js';
 
 /**
  * Collect repeatable privacy values.
  */
-function collectPrivacies(value: string, previous: Privacy[]): Privacy[] {
-  const valid: Privacy[] = ['public', 'team', 'participants'];
-  if (!valid.includes(value as Privacy)) {
-    console.error(`Invalid privacy value: ${value}. Must be one of: ${valid.join(', ')}`);
+function collectPrivacies(value: string, previous: BitePrivacy[]): BitePrivacy[] {
+  const validated = validatePrivacy(value);
+  if (!validated) {
+    console.error(`Invalid privacy value: ${value}. Must be one of: public, team, participants`);
     process.exit(1);
   }
-  return previous.concat([value as Privacy]);
-}
-
-/**
- * Parse time string (supports seconds or MM:SS format).
- */
-function parseTime(value: string): number {
-  if (value.includes(':')) {
-    const parts = value.split(':');
-    if (parts.length === 2) {
-      const [mins, secs] = parts;
-      return Number.parseInt(mins ?? '0', 10) * 60 + Number.parseFloat(secs ?? '0');
-    }
-    if (parts.length === 3) {
-      const [hours, mins, secs] = parts;
-      return (
-        Number.parseInt(hours ?? '0', 10) * 3600 +
-        Number.parseInt(mins ?? '0', 10) * 60 +
-        Number.parseFloat(secs ?? '0')
-      );
-    }
-  }
-  return Number.parseFloat(value);
+  return previous.concat([validated]);
 }
 
 export function registerBitesCommand(program: Command): void {
