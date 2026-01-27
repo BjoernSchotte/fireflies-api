@@ -47,6 +47,7 @@ export {
 } from './helpers/action-items-format.js';
 // Helpers
 export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
+export { extractDomain, hasExternalParticipants } from './helpers/domain-utils.js';
 export {
   type ExternalQuestion,
   type ExternalQuestionsResult,
