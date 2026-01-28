@@ -2,6 +2,8 @@
 
 TypeScript SDK for [Fireflies.ai](https://fireflies.ai) with realtime transcription streaming.
 
+> **Disclaimer**: This is an unofficial, community-built open source SDK. It is **NOT affiliated with, endorsed by, or associated with Fireflies.ai Inc.** This project provides a TypeScript SDK and CLI that uses the publicly available Fireflies API.
+
 ## Features
 
 - Full GraphQL API coverage
@@ -58,6 +60,32 @@ for await (const chunk of client.realtime.stream('meeting-id')) {
 ## API Reference
 
 For Fireflies API field details, see [docs.fireflies.ai](https://docs.fireflies.ai).
+
+## Claude Code Plugin
+
+Use Fireflies directly in [Claude Code](https://claude.com/claude-code) with slash commands:
+
+```bash
+# Install the plugin
+/plugin marketplace add BjoernSchotte/fireflies-api
+/plugin install fireflies@fireflies-api
+```
+
+Set your API key before launching Claude Code:
+```bash
+export FIREFLIES_API_KEY="your-api-key"
+claude
+```
+
+Available commands:
+- `/ff-transcripts` - List, get, analyze transcripts
+- `/ff-search` - Full-text search
+- `/ff-insights` - Meeting analytics
+- `/ff-meetings` - Active meetings, add bot
+- `/ff-realtime` - Live transcription streaming
+- `/ff-export` - Export to markdown/JSON
+
+See [Claude Code Plugin docs](docs/claude-code-plugin.md) for full documentation.
 
 ## License
 

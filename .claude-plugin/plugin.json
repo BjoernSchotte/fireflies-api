@@ -1,0 +1,12 @@
+{
+  "name": "fireflies",
+  "description": "Unofficial Fireflies.ai meeting transcription SDK - transcripts, search, insights, live streaming. NOT affiliated with Fireflies.ai Inc.",
+  "version": "0.5.0",
+  "author": {
+    "name": "Bjoern Schotte"
+  },
+  "homepage": "https://github.com/BjoernSchotte/fireflies-api",
+  "repository": "https://github.com/BjoernSchotte/fireflies-api",
+  "license": "MIT",
+  "keywords": ["fireflies", "transcription", "meeting", "api", "realtime"]
+}

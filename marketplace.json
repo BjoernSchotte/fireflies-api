@@ -1,0 +1,16 @@
+{
+  "name": "fireflies-api",
+  "owner": {
+    "name": "Bjoern Schotte"
+  },
+  "metadata": {
+    "description": "Claude Code plugin for unofficial Fireflies.ai meeting transcription SDK"
+  },
+  "plugins": [
+    {
+      "name": "fireflies",
+      "source": "./",
+      "description": "Fireflies.ai - transcripts, search, insights, live streaming (unofficial)"
+    }
+  ]
+}

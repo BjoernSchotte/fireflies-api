@@ -1,6 +1,6 @@
 {
   "name": "fireflies-api",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "description": "TypeScript SDK for Fireflies.ai API with Realtime WebSocket support",
   "exports": {
@@ -37,7 +37,8 @@
     "dist"
   ],
   "bin": {
-    "fireflies": "./dist/cli/index.js"
+    "fireflies": "./dist/cli/index.js",
+    "fireflies-api": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsup",
