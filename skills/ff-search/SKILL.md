@@ -16,20 +16,21 @@ npm exec --yes --package=fireflies-api -- fireflies-api search <query> [options]
 
 ## Options
 
-- `--speaker <name>` - Filter by speaker name
-- `--questions` - Search only questions
-- `--tasks` - Search only task-related content
-- `--context` - Include surrounding context
-- `--case-sensitive` - Case-sensitive search
-- `--scope <scope>` - Search scope
-- `--from <date>` - Start date (YYYY-MM-DD)
-- `--to <date>` - End date (YYYY-MM-DD)
+**Date Shortcuts (prefer these over --from/--to):**
 - `--today` - Today's transcripts
 - `--yesterday` - Yesterday's transcripts
 - `--last-week` - Last 7 days
 - `--last-month` - Last 30 days
 - `--days <n>` - Last N days
+
+**Search Filters:**
+- `--speaker <name>` - Filter by speaker name
+- `--questions` - Search only questions
+- `--tasks` - Search only task-related content
+- `--context` - Include surrounding context
 - `--limit <n>` - Number of results
+- `--from <date>` - Start date (YYYY-MM-DD) - only if shortcuts don't fit
+- `--to <date>` - End date (YYYY-MM-DD) - only if shortcuts don't fit
 - `-o, --output <format>` - Output format: json, jsonl, table, tsv, plain
 
 ## Examples

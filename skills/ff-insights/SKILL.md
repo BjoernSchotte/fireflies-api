@@ -16,17 +16,20 @@ npm exec --yes --package=fireflies-api -- fireflies-api insights [options]
 
 ## Options
 
-- `--from <date>` - Start date (YYYY-MM-DD)
-- `--to <date>` - End date (YYYY-MM-DD)
+**Date Shortcuts (prefer these over --from/--to):**
 - `--today` - Today's meetings
 - `--yesterday` - Yesterday's meetings
 - `--last-week` - Last 7 days
 - `--last-month` - Last 30 days
 - `--days <n>` - Last N days
+
+**Analytics Options:**
 - `--external` - Include external participants
 - `--speaker <name>` - Filter by speaker
 - `--group-by <field>` - Group results by field
 - `--top <n>` - Show top N results
+- `--from <date>` - Start date (YYYY-MM-DD) - only if shortcuts don't fit
+- `--to <date>` - End date (YYYY-MM-DD) - only if shortcuts don't fit
 - `-o, --output <format>` - Output format: json, jsonl, table, tsv, plain
 
 ## Examples

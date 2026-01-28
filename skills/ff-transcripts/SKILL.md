@@ -15,21 +15,21 @@ Manage and analyze meeting transcripts from Fireflies.ai.
 npm exec --yes --package=fireflies-api -- fireflies-api transcripts list [options]
 ```
 
-**Options:**
-- `--limit <n>` - Number of transcripts to return
-- `--from <date>` - Start date (YYYY-MM-DD)
-- `--to <date>` - End date (YYYY-MM-DD)
+**Date Shortcuts (prefer these over --from/--to):**
 - `--today` - Today's transcripts
 - `--yesterday` - Yesterday's transcripts
 - `--last-week` - Last 7 days
 - `--last-month` - Last 30 days
 - `--days <n>` - Last N days
+
+**Other Options:**
+- `--limit <n>` - Number of transcripts to return
+- `--from <date>` - Start date (YYYY-MM-DD) - only if shortcuts don't fit
+- `--to <date>` - End date (YYYY-MM-DD) - only if shortcuts don't fit
 - `--mine` - Only my transcripts
 - `--keyword <text>` - Filter by keyword
-- `--scope <scope>` - Filter scope
 - `--organizer <email>` - Filter by organizer
 - `--participant <email>` - Filter by participant
-- `--normalize` - Normalize speaker names
 - `-o, --output <format>` - Output format: json, jsonl, table, tsv, plain
 
 ### Get Transcript
