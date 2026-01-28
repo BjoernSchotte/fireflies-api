@@ -74,6 +74,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BjoernSchotte/fireflies-api"
+  },
+  "bugs": {
+    "url": "https://github.com/BjoernSchotte/fireflies-api/issues"
+  },
+  "homepage": "https://github.com/BjoernSchotte/fireflies-api#readme",
   "dependencies": {
     "commander": "^13.0.0",
     "socket.io-client": "^4.8.3"
