@@ -398,10 +398,25 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         }
       `;
 
+      // Get internal domain if filtering for external meetings
+      let internalDomain: string | undefined;
+      if (params?.external) {
+        const userQuery = 'query { user { email } }';
+        const userData = await client.execute<{ user: { email: string } }>(userQuery);
+        internalDomain = extractDomain(userData.user.email);
+      }
+
       const variables = buildListVariables(params);
       const data = await client.execute<{ transcripts: TranscriptResponse[] }>(query, variables);
 
-      return data.transcripts.map(normalizeTranscript);
+      let results = data.transcripts.map(normalizeTranscript);
+
+      // Client-side filter for external participants
+      if (internalDomain) {
+        results = results.filter((t) => hasExternalParticipants(t.participants, internalDomain));
+      }
+
+      return results;
     },
 
     async getSummary(id: string): Promise<Summary | null> {

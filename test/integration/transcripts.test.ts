@@ -271,6 +271,105 @@ describe('transcripts.getSummary', () => {
   });
 });
 
+describe('transcripts.list with external filter', () => {
+  it('filters for meetings with external participants', async () => {
+    let queryCount = 0;
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        queryCount++;
+        const body = (await request.json()) as { query: string };
+
+        // First query: user email for domain extraction
+        if (body.query.includes('user {')) {
+          return HttpResponse.json({
+            data: { user: { email: 'me@company.com' } },
+          });
+        }
+
+        // Second query: transcripts list
+        return HttpResponse.json({
+          data: {
+            transcripts: [
+              {
+                id: 'internal-meeting',
+                title: 'Internal Team Sync',
+                organizer_email: 'boss@company.com',
+                transcript_url: 'https://app.fireflies.ai/view/internal-meeting',
+                participants: ['alice@company.com', 'bob@company.com'],
+                duration: 1800,
+                dateString: '2024-01-15T10:00:00.000Z',
+                date: 1705312800000,
+                meeting_info: {
+                  fred_joined: true,
+                  silent_meeting: false,
+                  summary_status: 'processed',
+                },
+              },
+              {
+                id: 'external-meeting',
+                title: 'Client Call',
+                organizer_email: 'me@company.com',
+                transcript_url: 'https://app.fireflies.ai/view/external-meeting',
+                participants: ['me@company.com', 'client@external.org'],
+                duration: 3600,
+                dateString: '2024-01-14T14:00:00.000Z',
+                date: 1705240800000,
+                meeting_info: {
+                  fred_joined: true,
+                  silent_meeting: false,
+                  summary_status: 'processed',
+                },
+              },
+              {
+                id: 'mixed-meeting',
+                title: 'Partner Discussion',
+                organizer_email: 'pm@company.com',
+                transcript_url: 'https://app.fireflies.ai/view/mixed-meeting',
+                participants: ['pm@company.com', 'partner@vendor.com', 'dev@company.com'],
+                duration: 2700,
+                dateString: '2024-01-13T09:00:00.000Z',
+                date: 1705136400000,
+                meeting_info: {
+                  fred_joined: true,
+                  silent_meeting: false,
+                  summary_status: 'processed',
+                },
+              },
+            ],
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    const transcripts = await client.transcripts.list({ external: true });
+
+    // Should only return meetings with external participants
+    expect(transcripts).toHaveLength(2);
+    expect(transcripts.map((t) => t.id)).toEqual(['external-meeting', 'mixed-meeting']);
+    // Should have made 2 queries: one for user, one for transcripts
+    expect(queryCount).toBe(2);
+  });
+
+  it('does not fetch user when external is false', async () => {
+    let queryCount = 0;
+
+    server.use(
+      http.post(API_URL, async () => {
+        queryCount++;
+        return HttpResponse.json(listFixture);
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.list({ external: false });
+
+    // Should only make 1 query (transcripts list)
+    expect(queryCount).toBe(1);
+  });
+});
+
 describe('transcripts.listAll', () => {
   it('iterates through all pages', async () => {
     let callCount = 0;

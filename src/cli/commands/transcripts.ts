@@ -94,6 +94,7 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--participant-me', 'Only meetings where I am a participant')
     .option('--user-id <id>', 'Filter by user ID')
     .option('--channel <id>', 'Filter by channel ID')
+    .option('--external', 'Only meetings with external (non-company) participants')
     .option('--normalize', 'Output in normalized provider-agnostic format')
     .action(
       withErrorHandling(async (opts) => {
@@ -119,6 +120,7 @@ export function registerTranscriptsCommand(program: Command): void {
           participants: participants.length > 0 ? participants : undefined,
           user_id: opts.userId,
           channel_id: opts.channel,
+          external: opts.external,
         });
 
         // Normalize requires full transcript data (list returns partial data)

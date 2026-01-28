@@ -115,6 +115,13 @@ export interface TranscriptsListParams {
    * @deprecated Use fromDate and toDate instead.
    */
   date?: number;
+
+  /**
+   * Only include meetings with external participants.
+   * External means participants whose email domain differs from the current user's domain.
+   * When true, fetches the current user's email to determine the internal domain.
+   */
+  external?: boolean;
 }
 
 /**
