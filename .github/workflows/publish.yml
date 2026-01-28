@@ -5,13 +5,19 @@ on:
     tags:
       - 'v*'  # Triggers on v0.1.0, v1.0.0, etc.
 
+# Required secret:
+#   NPM_TOKEN - Granular access token from npmjs.com
+#               Create at: npmjs.com → Account → Access Tokens → Generate New Token → Granular Access Token
+#               Permissions: Read and write (for fireflies-api package)
+#               Expiration: 90 days max (set calendar reminder to rotate)
+
 jobs:
   publish:
     name: Publish to npm
     runs-on: ubuntu-latest
     permissions:
       contents: write  # For GitHub release
-      id-token: write  # For npm provenance
+      id-token: write  # For npm provenance attestation
     steps:
       - name: Checkout
         uses: actions/checkout@v4
