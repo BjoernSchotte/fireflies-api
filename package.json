@@ -1,6 +1,6 @@
 {
   "name": "fireflies-api",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "type": "module",
   "description": "TypeScript SDK for Fireflies.ai API with Realtime WebSocket support",
   "exports": {
