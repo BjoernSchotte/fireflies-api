@@ -1,7 +1,7 @@
 ---
 name: ff-fireflies
 description: Main hub for Fireflies.ai SDK. Use when working with meeting transcripts, search, insights, or live streaming.
-allowed-tools: Bash(npx -y fireflies-api *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api *)
 ---
 
 # Fireflies SDK - Main Hub
@@ -29,16 +29,16 @@ Use this skill as the main entry point for Fireflies.ai operations. Routes to ap
 
 ```bash
 # List recent transcripts
-npx -y fireflies-api transcripts list --limit 5
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts list --limit 5
 
 # Search transcripts
-npx -y fireflies-api search "budget" --limit 10
+npm exec --yes --package=fireflies-api -- fireflies-api search "budget" --limit 10
 
 # Get current user
-npx -y fireflies-api users me
+npm exec --yes --package=fireflies-api -- fireflies-api users me
 
 # Stream live transcription
-npx -y fireflies-api realtime <meeting-id>
+npm exec --yes --package=fireflies-api -- fireflies-api realtime <meeting-id>
 ```
 
 ## API Key
@@ -52,6 +52,6 @@ The `FIREFLIES_API_KEY` environment variable must be set before using any comman
    test -n "$FIREFLIES_API_KEY" && echo "API key: OK" || echo "ERROR: Set FIREFLIES_API_KEY environment variable"
    ```
 
-2. Run commands using `npx -y fireflies-api <command>`. The `-y` flag auto-installs the package if not present.
+2. Run commands using `npm exec --yes --package=fireflies-api -- fireflies-api <command>`. The `-y` flag auto-installs the package if not present.
 
 3. Based on the user's request, route to the appropriate subcommand or suggest a specific `/ff-*` skill.

@@ -1,7 +1,7 @@
 ---
 name: ff-ai-apps
 description: View AI application outputs and custom AI analysis for transcripts. Use when retrieving AI-generated summaries or custom analysis.
-allowed-tools: Bash(npx -y fireflies-api ai-apps *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api ai-apps *)
 ---
 
 # Fireflies AI Apps
@@ -13,7 +13,7 @@ Fireflies allows custom AI apps to process transcripts, generating summaries, an
 ## Command
 
 ```bash
-npx -y fireflies-api ai-apps list [options]
+npm exec --yes --package=fireflies-api -- fireflies-api ai-apps list [options]
 ```
 
 ## Options
@@ -27,13 +27,13 @@ npx -y fireflies-api ai-apps list [options]
 
 ```bash
 # List all AI app outputs for a transcript
-npx -y fireflies-api ai-apps list --transcript "transcript_123"
+npm exec --yes --package=fireflies-api -- fireflies-api ai-apps list --transcript "transcript_123"
 
 # Filter by specific app
-npx -y fireflies-api ai-apps list --transcript "transcript_123" --app "Summary Generator"
+npm exec --yes --package=fireflies-api -- fireflies-api ai-apps list --transcript "transcript_123" --app "Summary Generator"
 
 # Limit results
-npx -y fireflies-api ai-apps list --transcript "transcript_123" --limit 5
+npm exec --yes --package=fireflies-api -- fireflies-api ai-apps list --transcript "transcript_123" --limit 5
 ```
 
 ## Instructions

@@ -1,7 +1,7 @@
 ---
 name: ff-export
 description: Export transcripts to Markdown or JSON formats. Use when saving transcripts to files for documentation or processing.
-allowed-tools: Bash(npx -y fireflies-api export *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api export *)
 ---
 
 # Fireflies Export
@@ -11,7 +11,7 @@ Export transcripts to various formats (Markdown, JSON).
 ## Command
 
 ```bash
-npx -y fireflies-api export <id> [file] [options]
+npm exec --yes --package=fireflies-api -- fireflies-api export <id> [file] [options]
 ```
 
 ## Options
@@ -29,19 +29,19 @@ npx -y fireflies-api export <id> [file] [options]
 
 ```bash
 # Export to stdout
-npx -y fireflies-api export "transcript_123"
+npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123"
 
 # Export to markdown file
-npx -y fireflies-api export "transcript_123" meeting-notes.md
+npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123" meeting-notes.md
 
 # Export to JSON
-npx -y fireflies-api export "transcript_123" meeting.json --format json
+npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123" meeting.json --format json
 
 # Export without summary
-npx -y fireflies-api export "transcript_123" notes.md --no-summary
+npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123" notes.md --no-summary
 
 # Export without timestamps
-npx -y fireflies-api export "transcript_123" notes.md --no-timestamps
+npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123" notes.md --no-timestamps
 ```
 
 ## Instructions

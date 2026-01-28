@@ -1,7 +1,7 @@
 ---
 name: ff-insights
 description: Aggregate meeting analytics and statistics. Use when analyzing meeting patterns, speaker time, or trends.
-allowed-tools: Bash(npx -y fireflies-api insights *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api insights *)
 ---
 
 # Fireflies Insights
@@ -11,7 +11,7 @@ Aggregate meeting analytics and statistics.
 ## Command
 
 ```bash
-npx -y fireflies-api insights [options]
+npm exec --yes --package=fireflies-api -- fireflies-api insights [options]
 ```
 
 ## Options
@@ -33,16 +33,16 @@ npx -y fireflies-api insights [options]
 
 ```bash
 # Get insights for last week
-npx -y fireflies-api insights --last-week
+npm exec --yes --package=fireflies-api -- fireflies-api insights --last-week
 
 # Get insights grouped by speaker
-npx -y fireflies-api insights --last-month --group-by speaker
+npm exec --yes --package=fireflies-api -- fireflies-api insights --last-month --group-by speaker
 
 # Get top 5 speakers
-npx -y fireflies-api insights --days 30 --top 5
+npm exec --yes --package=fireflies-api -- fireflies-api insights --days 30 --top 5
 
 # Get insights for specific date range
-npx -y fireflies-api insights --from 2024-01-01 --to 2024-01-31
+npm exec --yes --package=fireflies-api -- fireflies-api insights --from 2024-01-01 --to 2024-01-31
 ```
 
 ## Instructions

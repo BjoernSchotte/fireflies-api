@@ -1,7 +1,7 @@
 ---
 name: ff-search
 description: Full-text search across meeting transcripts. Use when finding specific content, speakers, or questions.
-allowed-tools: Bash(npx -y fireflies-api search *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api search *)
 ---
 
 # Fireflies Search
@@ -11,7 +11,7 @@ Full-text search across meeting transcripts.
 ## Command
 
 ```bash
-npx -y fireflies-api search <query> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api search <query> [options]
 ```
 
 ## Options
@@ -36,16 +36,16 @@ npx -y fireflies-api search <query> [options]
 
 ```bash
 # Basic search
-npx -y fireflies-api search "budget"
+npm exec --yes --package=fireflies-api -- fireflies-api search "budget"
 
 # Search with speaker filter
-npx -y fireflies-api search "proposal" --speaker "John"
+npm exec --yes --package=fireflies-api -- fireflies-api search "proposal" --speaker "John"
 
 # Search questions from last week
-npx -y fireflies-api search "deadline" --questions --last-week
+npm exec --yes --package=fireflies-api -- fireflies-api search "deadline" --questions --last-week
 
 # Search with context
-npx -y fireflies-api search "action item" --context --limit 20
+npm exec --yes --package=fireflies-api -- fireflies-api search "action item" --context --limit 20
 ```
 
 ## Instructions

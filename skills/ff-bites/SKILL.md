@@ -1,7 +1,7 @@
 ---
 name: ff-bites
 description: Manage clips and soundbites from transcripts. Use when creating, listing, or getting highlight clips from meetings.
-allowed-tools: Bash(npx -y fireflies-api bites *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api bites *)
 ---
 
 # Fireflies Bites
@@ -12,7 +12,7 @@ Manage clips and soundbites from meeting transcripts.
 
 ### List Bites
 ```bash
-npx -y fireflies-api bites list [options]
+npm exec --yes --package=fireflies-api -- fireflies-api bites list [options]
 ```
 
 **Options:**
@@ -24,12 +24,12 @@ npx -y fireflies-api bites list [options]
 
 ### Get Bite
 ```bash
-npx -y fireflies-api bites get <id>
+npm exec --yes --package=fireflies-api -- fireflies-api bites get <id>
 ```
 
 ### Create Bite
 ```bash
-npx -y fireflies-api bites create [options]
+npm exec --yes --package=fireflies-api -- fireflies-api bites create [options]
 ```
 
 **Options:**
@@ -45,16 +45,16 @@ npx -y fireflies-api bites create [options]
 
 ```bash
 # List recent bites
-npx -y fireflies-api bites list --limit 10
+npm exec --yes --package=fireflies-api -- fireflies-api bites list --limit 10
 
 # List bites from a specific transcript
-npx -y fireflies-api bites list --transcript "transcript_123"
+npm exec --yes --package=fireflies-api -- fireflies-api bites list --transcript "transcript_123"
 
 # Get a specific bite
-npx -y fireflies-api bites get "bite_456"
+npm exec --yes --package=fireflies-api -- fireflies-api bites get "bite_456"
 
 # Create a new bite
-npx -y fireflies-api bites create --transcript "transcript_123" --start 120 --end 180 --name "Key Decision"
+npm exec --yes --package=fireflies-api -- fireflies-api bites create --transcript "transcript_123" --start 120 --end 180 --name "Key Decision"
 ```
 
 ## Instructions

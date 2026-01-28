@@ -1,7 +1,7 @@
 ---
 name: ff-audio
 description: Upload audio files for transcription. Use when uploading MP3, WAV, or video files to Fireflies for processing.
-allowed-tools: Bash(npx -y fireflies-api audio *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api audio *)
 ---
 
 # Fireflies Audio Upload
@@ -11,7 +11,7 @@ Upload audio files for transcription.
 ## Command
 
 ```bash
-npx -y fireflies-api audio upload <url> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api audio upload <url> [options]
 ```
 
 ## Options
@@ -33,16 +33,16 @@ The URL must point to a publicly accessible audio/video file. Supported formats 
 
 ```bash
 # Upload audio file
-npx -y fireflies-api audio upload "https://example.com/meeting.mp3" --title "Q4 Planning"
+npm exec --yes --package=fireflies-api -- fireflies-api audio upload "https://example.com/meeting.mp3" --title "Q4 Planning"
 
 # Upload with webhook notification
-npx -y fireflies-api audio upload "https://example.com/meeting.mp3" --title "Team Sync" --webhook "https://myapp.com/webhook"
+npm exec --yes --package=fireflies-api -- fireflies-api audio upload "https://example.com/meeting.mp3" --title "Team Sync" --webhook "https://myapp.com/webhook"
 
 # Upload with language specification
-npx -y fireflies-api audio upload "https://example.com/meeting.mp3" --title "German Meeting" --language "de"
+npm exec --yes --package=fireflies-api -- fireflies-api audio upload "https://example.com/meeting.mp3" --title "German Meeting" --language "de"
 
 # Upload with custom reference
-npx -y fireflies-api audio upload "https://example.com/meeting.mp3" --title "Client Call" --reference-id "call_2024_001"
+npm exec --yes --package=fireflies-api -- fireflies-api audio upload "https://example.com/meeting.mp3" --title "Client Call" --reference-id "call_2024_001"
 ```
 
 ## Instructions

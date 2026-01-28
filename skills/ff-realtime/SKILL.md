@@ -1,7 +1,7 @@
 ---
 name: ff-realtime
 description: Stream live transcription from active meetings in real-time via WebSocket. Use when monitoring live meeting transcription.
-allowed-tools: Bash(npx -y fireflies-api realtime *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api realtime *)
 ---
 
 # Fireflies Realtime
@@ -13,7 +13,7 @@ This is the **key differentiator** of this SDK - live transcription streaming vi
 ## Command
 
 ```bash
-npx -y fireflies-api realtime <meeting-id>
+npm exec --yes --package=fireflies-api -- fireflies-api realtime <meeting-id>
 ```
 
 ## How It Works
@@ -36,7 +36,7 @@ John: Great, please go ahead.
 
 ```bash
 # Stream from an active meeting
-npx -y fireflies-api realtime "meeting_abc123"
+npm exec --yes --package=fireflies-api -- fireflies-api realtime "meeting_abc123"
 ```
 
 ## Requirements
@@ -59,7 +59,7 @@ npx -y fireflies-api realtime "meeting_abc123"
    ```
 
 2. The meeting ID can be obtained from:
-   - `npx -y fireflies-api meetings list` for active meetings
+   - `npm exec --yes --package=fireflies-api -- fireflies-api meetings list` for active meetings
    - The Fireflies dashboard
 
 3. Start the realtime stream and let the user see transcription as it happens.

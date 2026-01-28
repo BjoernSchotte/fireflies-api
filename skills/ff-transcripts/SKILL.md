@@ -1,7 +1,7 @@
 ---
 name: ff-transcripts
 description: Manage and analyze meeting transcripts. Use when listing, getting, or analyzing transcripts, speakers, or action items.
-allowed-tools: Bash(npx -y fireflies-api transcripts *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api transcripts *)
 ---
 
 # Fireflies Transcripts
@@ -12,7 +12,7 @@ Manage and analyze meeting transcripts from Fireflies.ai.
 
 ### List Transcripts
 ```bash
-npx -y fireflies-api transcripts list [options]
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts list [options]
 ```
 
 **Options:**
@@ -34,7 +34,7 @@ npx -y fireflies-api transcripts list [options]
 
 ### Get Transcript
 ```bash
-npx -y fireflies-api transcripts get <id> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts get <id> [options]
 ```
 
 **Options:**
@@ -45,7 +45,7 @@ npx -y fireflies-api transcripts get <id> [options]
 
 ### Speaker Analysis
 ```bash
-npx -y fireflies-api transcripts speakers <id> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts speakers <id> [options]
 ```
 
 **Options:**
@@ -54,7 +54,7 @@ npx -y fireflies-api transcripts speakers <id> [options]
 
 ### Action Items
 ```bash
-npx -y fireflies-api transcripts action-items get <id> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts action-items get <id> [options]
 ```
 
 **Options:**
@@ -64,7 +64,7 @@ npx -y fireflies-api transcripts action-items get <id> [options]
 
 ### Export Action Items
 ```bash
-npx -y fireflies-api transcripts action-items export [options]
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts action-items export [options]
 ```
 
 **Options:**
@@ -77,7 +77,7 @@ npx -y fireflies-api transcripts action-items export [options]
 
 ### Delete Transcript
 ```bash
-npx -y fireflies-api transcripts delete <id> --confirm
+npm exec --yes --package=fireflies-api -- fireflies-api transcripts delete <id> --confirm
 ```
 
 **Note:** The `--confirm` flag is required.

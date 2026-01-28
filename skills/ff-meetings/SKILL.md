@@ -1,7 +1,7 @@
 ---
 name: ff-meetings
 description: Manage active meetings and add Fireflies bot to calls. Use when listing active meetings or adding bot to a meeting URL.
-allowed-tools: Bash(npx -y fireflies-api meetings *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api meetings *)
 ---
 
 # Fireflies Meetings
@@ -12,7 +12,7 @@ Manage active meetings and add bots to meetings.
 
 ### List Active Meetings
 ```bash
-npx -y fireflies-api meetings list [options]
+npm exec --yes --package=fireflies-api -- fireflies-api meetings list [options]
 ```
 
 **Options:**
@@ -22,7 +22,7 @@ npx -y fireflies-api meetings list [options]
 
 ### Add Bot to Meeting
 ```bash
-npx -y fireflies-api meetings add-bot <url> [options]
+npm exec --yes --package=fireflies-api -- fireflies-api meetings add-bot <url> [options]
 ```
 
 **Options:**
@@ -35,13 +35,13 @@ npx -y fireflies-api meetings add-bot <url> [options]
 
 ```bash
 # List active meetings
-npx -y fireflies-api meetings list
+npm exec --yes --package=fireflies-api -- fireflies-api meetings list
 
 # Add bot to a Zoom meeting
-npx -y fireflies-api meetings add-bot "https://zoom.us/j/123456789" --title "Team Standup"
+npm exec --yes --package=fireflies-api -- fireflies-api meetings add-bot "https://zoom.us/j/123456789" --title "Team Standup"
 
 # Add bot with password
-npx -y fireflies-api meetings add-bot "https://zoom.us/j/123456789" --password "abc123" --duration 60
+npm exec --yes --package=fireflies-api -- fireflies-api meetings add-bot "https://zoom.us/j/123456789" --password "abc123" --duration 60
 ```
 
 ## Instructions

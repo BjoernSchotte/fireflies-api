@@ -1,7 +1,7 @@
 ---
 name: ff-users
 description: User management for Fireflies.ai. Use when getting current user info, listing team members, or managing roles.
-allowed-tools: Bash(npx -y fireflies-api users *)
+allowed-tools: Bash(npm exec --yes --package=fireflies-api -- fireflies-api users *)
 ---
 
 # Fireflies Users
@@ -12,12 +12,12 @@ User management for Fireflies.ai.
 
 ### Get Current User
 ```bash
-npx -y fireflies-api users me
+npm exec --yes --package=fireflies-api -- fireflies-api users me
 ```
 
 ### List Users
 ```bash
-npx -y fireflies-api users list [options]
+npm exec --yes --package=fireflies-api -- fireflies-api users list [options]
 ```
 
 **Options:**
@@ -25,12 +25,12 @@ npx -y fireflies-api users list [options]
 
 ### Get User by ID
 ```bash
-npx -y fireflies-api users get <id>
+npm exec --yes --package=fireflies-api -- fireflies-api users get <id>
 ```
 
 ### Set User Role
 ```bash
-npx -y fireflies-api users set-role <id> --role <role>
+npm exec --yes --package=fireflies-api -- fireflies-api users set-role <id> --role <role>
 ```
 
 **Roles:** admin, member, etc.
@@ -39,16 +39,16 @@ npx -y fireflies-api users set-role <id> --role <role>
 
 ```bash
 # Get current user info
-npx -y fireflies-api users me
+npm exec --yes --package=fireflies-api -- fireflies-api users me
 
 # List all users in team
-npx -y fireflies-api users list
+npm exec --yes --package=fireflies-api -- fireflies-api users list
 
 # Get specific user
-npx -y fireflies-api users get "user_123"
+npm exec --yes --package=fireflies-api -- fireflies-api users get "user_123"
 
 # Set user role
-npx -y fireflies-api users set-role "user_123" --role admin
+npm exec --yes --package=fireflies-api -- fireflies-api users set-role "user_123" --role admin
 ```
 
 ## Instructions
