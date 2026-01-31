@@ -47,6 +47,23 @@ export {
 } from './helpers/action-items-format.js';
 // Helpers
 export { type BatchOptions, type BatchResult, batch, batchAll } from './helpers/batch.js';
+export {
+  aggregateActionItemsForDigest,
+  aggregateParticipants,
+  buildDigest,
+  calculateStats,
+  type DigestActionItem,
+  type DigestActionItems,
+  type DigestBuildOptions,
+  type DigestHighlight,
+  type DigestMeeting,
+  type DigestMeetingWithActionItems,
+  type DigestParticipant,
+  type DigestStats,
+  extractHighlights,
+  type WeeklyDigest,
+} from './helpers/digest.js';
+export { type RenderOptions, renderDigest, renderTemplate } from './helpers/digest-templates.js';
 export { extractDomain, hasExternalParticipants } from './helpers/domain-utils.js';
 export {
   type ExternalQuestion,

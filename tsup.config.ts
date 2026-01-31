@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'tsup';
 
 function addShebang() {
@@ -13,6 +13,15 @@ function addShebang() {
     } catch {
       // File might not exist yet
     }
+  }
+}
+
+function copyTemplates() {
+  try {
+    mkdirSync('dist/templates/digest', { recursive: true });
+    cpSync('src/templates/digest', 'dist/templates/digest', { recursive: true });
+  } catch {
+    // Templates might not exist
   }
 }
 
@@ -35,5 +44,6 @@ export default defineConfig({
   external: ['express', 'fastify', 'hono', 'zod'],
   async onSuccess() {
     addShebang();
+    copyTemplates();
   },
 });

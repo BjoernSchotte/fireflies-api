@@ -5,6 +5,7 @@ import { Command } from 'commander';
 import { registerAiAppsCommand } from './commands/ai-apps.js';
 import { registerAudioCommand } from './commands/audio.js';
 import { registerBitesCommand } from './commands/bites.js';
+import { registerDigestCommand } from './commands/digest.js';
 import { registerExportCommand } from './commands/export.js';
 import { registerInsightsCommand } from './commands/insights.js';
 import { registerMeetingsCommand } from './commands/meetings.js';
@@ -41,6 +42,7 @@ program
 registerTranscriptsCommand(program);
 registerSearchCommand(program);
 registerInsightsCommand(program);
+registerDigestCommand(program);
 registerMeetingsCommand(program);
 registerUsersCommand(program);
 registerBitesCommand(program);
