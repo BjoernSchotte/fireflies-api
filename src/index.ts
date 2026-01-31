@@ -81,7 +81,12 @@ export {
   normalizeTranscripts,
   normalizeTranscriptsAll,
 } from './helpers/normalize.js';
-export { collectAll, paginate } from './helpers/pagination.js';
+export {
+  collectAll,
+  type ParallelPaginationOptions,
+  paginate,
+  paginateParallel,
+} from './helpers/pagination.js';
 export { searchTranscript } from './helpers/search.js';
 export {
   analyzeSpeakers,

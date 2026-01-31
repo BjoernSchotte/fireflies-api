@@ -1,9 +1,15 @@
 import type { Command } from 'commander';
 import type { SearchMatch, SearchResults } from '../../types/search.js';
-import { getClient, getOutputFormat, type OutputFormat } from '../utils/client.js';
+import {
+  getClient,
+  getOutputFormat,
+  isProgressEnabled,
+  type OutputFormat,
+} from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output, writeLine } from '../utils/output.js';
+import { withProgress } from '../utils/progress.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -141,22 +147,27 @@ export function registerSearchCommand(program: Command): void {
       withErrorHandling(async (query: string, opts) => {
         const client = getClient(program);
         const format = getOutputFormat(program);
+        const showProgress = isProgressEnabled(program);
         const { fromDate, toDate } = resolveDateRange(opts);
 
-        const results = await client.transcripts.search(query, {
-          caseSensitive: opts.caseSensitive,
-          scope: opts.scope,
-          speakers: opts.speaker.length > 0 ? opts.speaker : undefined,
-          filterQuestions: opts.questions,
-          filterTasks: opts.tasks,
-          contextLines: Number.parseInt(opts.context, 10),
-          fromDate,
-          toDate,
-          mine: opts.mine,
-          organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
-          participants: opts.participant.length > 0 ? opts.participant : undefined,
-          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
-        });
+        const results = await withProgress(
+          { enabled: showProgress, text: `Searching for "${query}"...` },
+          async () =>
+            client.transcripts.search(query, {
+              caseSensitive: opts.caseSensitive,
+              scope: opts.scope,
+              speakers: opts.speaker.length > 0 ? opts.speaker : undefined,
+              filterQuestions: opts.questions,
+              filterTasks: opts.tasks,
+              contextLines: Number.parseInt(opts.context, 10),
+              fromDate,
+              toDate,
+              mine: opts.mine,
+              organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
+              participants: opts.participant.length > 0 ? opts.participant : undefined,
+              limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+            })
+        );
 
         outputSearchResults(results, format);
       })

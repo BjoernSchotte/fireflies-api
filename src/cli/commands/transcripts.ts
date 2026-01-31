@@ -7,11 +7,12 @@ import type {
   ActionItemsFilterOptions,
   ActionItemsMarkdownOptions,
 } from '../../types/action-items.js';
-import { getClient, getOutputFormat } from '../utils/client.js';
+import { getClient, getOutputFormat, isProgressEnabled } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output, outputActionItems, outputSpeakerAnalytics, writeLine } from '../utils/output.js';
 import { formatDuration } from '../utils/parse.js';
+import { withProgress } from '../utils/progress.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -102,6 +103,7 @@ export function registerTranscriptsCommand(program: Command): void {
       withErrorHandling(async (opts) => {
         const client = getClient(program);
         const format = getOutputFormat(program);
+        const showProgress = isProgressEnabled(program);
         const { fromDate, toDate } = resolveDateRange(opts);
 
         // If --participant-me, fetch current user's email and add to participants filter
@@ -111,21 +113,25 @@ export function registerTranscriptsCommand(program: Command): void {
           participants.push(me.email);
         }
 
-        const transcripts = await client.transcripts.list({
-          limit: Number.parseInt(opts.limit, 10),
-          fromDate,
-          toDate,
-          mine: opts.mine,
-          keyword: opts.keyword,
-          scope: opts.scope,
-          organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
-          participants: participants.length > 0 ? participants : undefined,
-          user_id: opts.userId,
-          channel_id: opts.channel,
-          external: opts.external,
-          includeSentences: opts.includeSentences,
-          includeSummary: opts.includeSummary,
-        });
+        const transcripts = await withProgress(
+          { enabled: showProgress, text: 'Fetching transcripts...' },
+          async () =>
+            client.transcripts.list({
+              limit: Number.parseInt(opts.limit, 10),
+              fromDate,
+              toDate,
+              mine: opts.mine,
+              keyword: opts.keyword,
+              scope: opts.scope,
+              organizers: opts.organizer.length > 0 ? opts.organizer : undefined,
+              participants: participants.length > 0 ? participants : undefined,
+              user_id: opts.userId,
+              channel_id: opts.channel,
+              external: opts.external,
+              includeSentences: opts.includeSentences,
+              includeSummary: opts.includeSummary,
+            })
+        );
 
         // Normalize requires full transcript data (list returns partial data)
         if (opts.normalize) {
@@ -282,18 +288,23 @@ export function registerTranscriptsCommand(program: Command): void {
       withErrorHandling(async (opts) => {
         const client = getClient(program);
         const format = getOutputFormat(program);
+        const showProgress = isProgressEnabled(program);
         const { fromDate, toDate } = resolveDateRange(opts);
         const filterOptions = buildActionItemFilterOptions(opts);
 
-        const result = await client.transcripts.exportActionItems({
-          fromDate,
-          toDate,
-          mine: opts.mine,
-          organizers: arrayOrUndefined(opts.organizer),
-          participants: arrayOrUndefined(opts.participant),
-          limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
-          filterOptions,
-        });
+        const result = await withProgress(
+          { enabled: showProgress, text: 'Exporting action items...' },
+          async () =>
+            client.transcripts.exportActionItems({
+              fromDate,
+              toDate,
+              mine: opts.mine,
+              organizers: arrayOrUndefined(opts.organizer),
+              participants: arrayOrUndefined(opts.participant),
+              limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
+              filterOptions,
+            })
+        );
 
         // Plain format outputs markdown
         if (format === 'plain') {

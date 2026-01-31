@@ -6,6 +6,7 @@ export type OutputFormat = 'json' | 'jsonl' | 'table' | 'tsv' | 'plain';
 interface GlobalOptions {
   apiKey?: string;
   output?: OutputFormat;
+  progress?: boolean;
 }
 
 /**
@@ -30,4 +31,12 @@ export function getClient(cmd: Command): FirefliesClient {
 export function getOutputFormat(cmd: Command): OutputFormat {
   const opts = cmd.optsWithGlobals() as GlobalOptions;
   return opts.output ?? 'json';
+}
+
+/**
+ * Check if progress indicators are enabled.
+ */
+export function isProgressEnabled(cmd: Command): boolean {
+  const opts = cmd.optsWithGlobals() as GlobalOptions;
+  return opts.progress ?? false;
 }

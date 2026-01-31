@@ -5,11 +5,12 @@ import type {
   ParticipantStats,
   SpeakerInsightStats,
 } from '../../types/meeting-insights.js';
-import { getClient, getOutputFormat } from '../utils/client.js';
+import { getClient, getOutputFormat, isProgressEnabled } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output, writeLine } from '../utils/output.js';
 import { formatDuration } from '../utils/parse.js';
+import { withProgress } from '../utils/progress.js';
 
 /**
  * Collect repeatable option values into an array.
@@ -46,10 +47,12 @@ export function registerInsightsCommand(program: Command): void {
       withErrorHandling(async (opts) => {
         const client = getClient(program);
         const format = getOutputFormat(program);
+        const showProgress = isProgressEnabled(program);
         const { fromDate, toDate } = resolveDateRange(opts);
 
-        const insights = await client.transcripts.insights(
-          buildInsightsParams(opts, fromDate, toDate)
+        const insights = await withProgress(
+          { enabled: showProgress, text: 'Analyzing meetings...' },
+          async () => client.transcripts.insights(buildInsightsParams(opts, fromDate, toDate))
         );
 
         outputInsights(insights, format);

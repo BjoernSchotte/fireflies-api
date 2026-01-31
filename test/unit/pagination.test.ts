@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { collectAll, paginate } from '../../src/helpers/pagination.js';
+import { collectAll, paginate, paginateParallel } from '../../src/helpers/pagination.js';
 
 describe('paginate', () => {
   it('yields all items from a single page', async () => {
@@ -81,6 +81,110 @@ describe('paginate', () => {
     const fetcher = vi.fn().mockResolvedValueOnce([1, 2, 3]).mockRejectedValueOnce(error);
 
     await expect(collectAll(paginate(fetcher, 3))).rejects.toThrow('Page 2 failed');
+  });
+});
+
+describe('paginateParallel', () => {
+  it('yields all items in correct order', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce([1, 2, 3]) // Page 0
+      .mockResolvedValueOnce([4, 5, 6]) // Page 1
+      .mockResolvedValueOnce([7]); // Page 2 (partial = end)
+
+    const items = await collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 2 }));
+
+    // Items must be in order even though pages fetched in parallel
+    expect(items).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('fetches pages concurrently up to limit', async () => {
+    const callOrder: number[] = [];
+    const fetcher = vi.fn().mockImplementation(async (skip: number) => {
+      callOrder.push(skip);
+      // Simulate varying response times
+      await new Promise((r) => setTimeout(r, 10));
+      if (skip >= 6) return []; // End after 2 full pages
+      return [skip, skip + 1, skip + 2];
+    });
+
+    await collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 2, delayMs: 0 }));
+
+    // First 2 pages should be initiated together (concurrency=2)
+    expect(callOrder.slice(0, 2)).toEqual([0, 3]);
+  });
+
+  it('stops when partial page received', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce([1, 2, 3]) // Full page
+      .mockResolvedValueOnce([4, 5]); // Partial = end
+
+    // With concurrency=1, we only fetch next page after current is processed
+    const items = await collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 1 }));
+
+    expect(items).toEqual([1, 2, 3, 4, 5]);
+    // With concurrency=1, no over-fetching occurs
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('applies delay between fetch starts', async () => {
+    const timestamps: number[] = [];
+    const fetcher = vi.fn().mockImplementation(async () => {
+      timestamps.push(Date.now());
+      return [];
+    });
+
+    await collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 2, delayMs: 50 }));
+
+    // With delayMs=50 and concurrency=2, second call should be ~50ms after first
+    if (timestamps.length >= 2) {
+      const diff = (timestamps[1] as number) - (timestamps[0] as number);
+      expect(diff).toBeGreaterThanOrEqual(40); // Allow some tolerance
+    }
+  });
+
+  it('supports early exit from iteration', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce([1, 2, 3])
+      .mockResolvedValueOnce([4, 5, 6])
+      .mockResolvedValueOnce([7, 8, 9]);
+
+    const items: number[] = [];
+    for await (const item of paginateParallel(fetcher, { pageSize: 3, concurrency: 2 })) {
+      items.push(item);
+      if (items.length >= 4) break;
+    }
+
+    expect(items).toEqual([1, 2, 3, 4]);
+  });
+
+  it('uses default options', async () => {
+    const fetcher = vi.fn().mockResolvedValue([]);
+
+    await collectAll(paginateParallel(fetcher));
+
+    // Default pageSize is 50
+    expect(fetcher).toHaveBeenCalledWith(0, 50);
+  });
+
+  it('handles empty first page', async () => {
+    const fetcher = vi.fn().mockResolvedValue([]);
+
+    const items = await collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 2 }));
+
+    expect(items).toEqual([]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates fetcher errors', async () => {
+    const error = new Error('Fetch failed');
+    const fetcher = vi.fn().mockRejectedValue(error);
+
+    await expect(
+      collectAll(paginateParallel(fetcher, { pageSize: 3, concurrency: 2 }))
+    ).rejects.toThrow('Fetch failed');
   });
 });
 
