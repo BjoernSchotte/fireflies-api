@@ -102,7 +102,7 @@
     "tsup": "^8.0.0",
     "typedoc": "^0.28.16",
     "typescript": "^5.0.0",
-    "vitest": "^3.0.0",
+    "vitest": "^4.0.18",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
