@@ -122,6 +122,21 @@ export interface TranscriptsListParams {
    * When true, fetches the current user's email to determine the internal domain.
    */
   external?: boolean;
+
+  // Content options (for bulk queries)
+
+  /**
+   * Include the full sentences array in list results.
+   * Warning: Significantly increases response size.
+   * @default false
+   */
+  includeSentences?: boolean;
+
+  /**
+   * Include the summary object in list results.
+   * @default false
+   */
+  includeSummary?: boolean;
 }
 
 /**

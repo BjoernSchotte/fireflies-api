@@ -58,3 +58,17 @@ npm exec --yes --package=fireflies-api -- fireflies-api insights --from 2024-01-
 2. Execute the insights command with appropriate date filters.
 
 3. Suggest grouping options for better analysis (by speaker, by date, etc.).
+
+## Usage Tips
+
+**Output Format:**
+- Use `-o plain` for detailed human-readable output
+- Use `-o table` for compact summary
+- Only use `-o json` if user needs structured data
+
+**When to Use Insights:**
+- Getting meeting statistics and trends (efficient - single call)
+- Speaker analytics across multiple meetings
+- Time-based analysis (by day, week, month)
+- **Meetings with external participants** - use `--external` flag (filters by domain)
+- Avoids N+1 queries - aggregates in one API call

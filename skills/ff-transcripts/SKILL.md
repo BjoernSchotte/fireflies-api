@@ -26,10 +26,11 @@ npm exec --yes --package=fireflies-api -- fireflies-api transcripts list [option
 - `--limit <n>` - Number of transcripts to return
 - `--from <date>` - Start date (YYYY-MM-DD) - only if shortcuts don't fit
 - `--to <date>` - End date (YYYY-MM-DD) - only if shortcuts don't fit
-- `--mine` - Only my transcripts
+- `--mine` - Only my transcripts (I organized)
+- `--participant-me` - Only meetings where I am a participant
 - `--keyword <text>` - Filter by keyword
-- `--organizer <email>` - Filter by organizer
-- `--participant <email>` - Filter by participant
+- `--organizer <email>` - Filter by organizer (repeatable)
+- `--participant <email>` - Filter by participant (repeatable)
 - `-o, --output <format>` - Output format: json, jsonl, table, tsv, plain
 
 ### Get Transcript
@@ -94,3 +95,44 @@ npm exec --yes --package=fireflies-api -- fireflies-api transcripts delete <id> 
 3. For listing, suggest appropriate filters based on context.
 
 4. For deletion, always warn the user and require explicit confirmation.
+
+## CRITICAL Rules
+
+**DO NOT:**
+- Run `--help` - this skill documents all options
+- Invent options (e.g., `--fields`, `--external` do NOT exist on transcripts commands)
+- Use `--from/--to` when shortcuts work - use `--last-week` instead
+- Output JSON by default - always use `-o table` or `-o plain`
+- Pipe to jq/grep to filter - the data you need may not be in the output
+- Loop through transcripts with `get` to work around missing filters - explain the limitation
+
+**DO:**
+- Use date shortcuts: `--last-week`, `--last-month`, `--days N`
+- Always include `-o table` (or `-o plain`) for human-readable output
+- Explain limitations: "filtering by external participants isn't available for listing, but `insights --external` provides analytics"
+
+**DATA LIMITATIONS - `transcripts list` only returns:**
+- id, title, date, duration, organizer_email
+- Does NOT return: participants, sentences, summary, speakers
+- You CANNOT filter by participants client-side because that data isn't returned
+- For external participant analytics, use `insights --external` (the ONLY option)
+
+## Usage Tips
+
+**Output Format:**
+- Use `-o table` or `-o plain` for human-readable output (recommended)
+- Only use `-o json` if user explicitly needs JSON or programmatic output
+
+**Efficient Querying:**
+- `transcripts list` returns basic info only (id, title, date, duration)
+- For detailed info (summary, sentences), you must use `transcripts get <id>` per transcript
+- **Avoid N+1**: Consider these alternatives:
+  - Need analytics? Use `/ff-insights` (single efficient call)
+  - Need to find content? Use `/ff-search` (searches all transcripts at once)
+  - Need action items? Use `transcripts action-items export` (bulk export)
+
+**Limitations:**
+- `transcripts list` cannot filter by external/internal participants
+- If user asks for "meetings with external participants":
+  - Use `insights --external` for analytics about meetings with external participants
+  - Explain that listing with external filter is not yet available

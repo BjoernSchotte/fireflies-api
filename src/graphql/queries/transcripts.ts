@@ -196,6 +196,33 @@ const TRANSCRIPT_LIST_FIELDS = `
 `;
 
 /**
+ * Build list fields based on options.
+ * By default returns lightweight fields.
+ * When includeSentences or includeSummary is true, uses full base fields + requested content.
+ */
+function buildListFields(params?: TranscriptsListParams): string {
+  const includeSentences = params?.includeSentences === true;
+  const includeSummary = params?.includeSummary === true;
+
+  // If neither content option is requested, use lightweight fields
+  if (!includeSentences && !includeSummary) {
+    return TRANSCRIPT_LIST_FIELDS;
+  }
+
+  // Use full base fields when requesting content
+  let fields = TRANSCRIPT_BASE_FIELDS;
+
+  if (includeSentences) {
+    fields += SENTENCES_FIELDS;
+  }
+  if (includeSummary) {
+    fields += SUMMARY_FIELDS;
+  }
+
+  return fields;
+}
+
+/**
  * API for transcript operations.
  */
 export interface TranscriptsAPI {
@@ -356,6 +383,7 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
     },
 
     async list(params?: TranscriptsListParams): Promise<Transcript[]> {
+      const fields = buildListFields(params);
       const query = `
         query ListTranscripts(
           $keyword: String
@@ -393,7 +421,7 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
             participant_email: $participant_email
             date: $date
           ) {
-            ${TRANSCRIPT_LIST_FIELDS}
+            ${fields}
           }
         }
       `;
@@ -469,24 +497,24 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         ...listParams
       } = params;
 
-      // Phase 1: Find matching transcripts via server-side search
+      // Fetch transcripts with sentences in bulk (avoids N+1 queries)
       const transcripts: Transcript[] = [];
       for await (const t of this.listAll({
+        ...listParams,
         keyword: query,
         scope,
-        ...listParams,
+        includeSentences: true,
       })) {
         transcripts.push(t);
         if (limit && transcripts.length >= limit) break;
       }
 
-      // Phase 2: Fetch full transcripts and search locally
+      // Search locally within fetched transcripts
       const allMatches: SearchResults['matches'] = [];
       let transcriptsWithMatches = 0;
 
       for (const t of transcripts) {
-        const full = await this.get(t.id, { includeSentences: true });
-        const matches = searchTranscript(full, {
+        const matches = searchTranscript(t, {
           query,
           caseSensitive,
           speakers,
@@ -536,7 +564,7 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         internalDomain = extractDomain(userData.user.email);
       }
 
-      // Fetch transcripts with sentences (needed for speaker analysis)
+      // Fetch transcripts with sentences in bulk (needed for speaker analysis)
       const transcripts: Transcript[] = [];
       for await (const t of this.listAll({
         fromDate,
@@ -546,15 +574,14 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         participants,
         user_id,
         channel_id,
+        includeSentences: true,
       })) {
         // Skip if filtering for external and no external participants
         if (internalDomain && !hasExternalParticipants(t.participants, internalDomain)) {
           continue;
         }
 
-        // Fetch full transcript with sentences
-        const full = await this.get(t.id, { includeSentences: true, includeSummary: false });
-        transcripts.push(full);
+        transcripts.push(t);
 
         if (limit && transcripts.length >= limit) break;
       }
@@ -573,7 +600,7 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
     ): Promise<AggregatedActionItemsResult> {
       const { fromDate, toDate, mine, organizers, participants, limit, filterOptions } = params;
 
-      // Fetch transcripts with summary (needed for action items)
+      // Fetch transcripts with summary in bulk (needed for action items)
       const transcripts: Transcript[] = [];
       for await (const t of this.listAll({
         fromDate,
@@ -581,10 +608,9 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
         mine,
         organizers,
         participants,
+        includeSummary: true,
       })) {
-        // Fetch summary for action items
-        const full = await this.get(t.id, { includeSentences: false, includeSummary: true });
-        transcripts.push(full);
+        transcripts.push(t);
 
         if (limit && transcripts.length >= limit) break;
       }

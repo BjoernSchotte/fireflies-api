@@ -59,3 +59,15 @@ npm exec --yes --package=fireflies-api -- fireflies-api search "action item" --c
 2. Execute the search command with the user's query and any relevant filters.
 
 3. Suggest appropriate filters based on the user's intent (e.g., `--questions` for finding Q&A).
+
+## Usage Tips
+
+**Output Format:**
+- Use `-o plain` for human-readable output with context
+- Use `-o table` for compact tabular view
+- Only use `-o json` if user needs structured data
+
+**When to Use Search:**
+- Finding specific content across many transcripts (efficient - single call)
+- Finding who said something, questions asked, or action items mentioned
+- More efficient than listing transcripts + getting each one

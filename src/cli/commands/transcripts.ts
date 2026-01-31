@@ -95,6 +95,8 @@ export function registerTranscriptsCommand(program: Command): void {
     .option('--user-id <id>', 'Filter by user ID')
     .option('--channel <id>', 'Filter by channel ID')
     .option('--external', 'Only meetings with external (non-company) participants')
+    .option('--include-sentences', 'Include full transcript sentences (large response)')
+    .option('--include-summary', 'Include summary with action items, keywords, etc.')
     .option('--normalize', 'Output in normalized provider-agnostic format')
     .action(
       withErrorHandling(async (opts) => {
@@ -121,6 +123,8 @@ export function registerTranscriptsCommand(program: Command): void {
           user_id: opts.userId,
           channel_id: opts.channel,
           external: opts.external,
+          includeSentences: opts.includeSentences,
+          includeSummary: opts.includeSummary,
         });
 
         // Normalize requires full transcript data (list returns partial data)
@@ -130,6 +134,12 @@ export function registerTranscriptsCommand(program: Command): void {
           );
           const normalized = fullTranscripts.map((t) => normalizeTranscript(t));
           output(normalized, format);
+          return;
+        }
+
+        // If requesting full content, output complete transcripts
+        if (opts.includeSentences || opts.includeSummary) {
+          output(transcripts, format);
           return;
         }
 

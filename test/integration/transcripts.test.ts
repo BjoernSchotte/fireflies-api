@@ -370,7 +370,163 @@ describe('transcripts.list with external filter', () => {
   });
 });
 
+describe('transcripts.list with content options', () => {
+  it('uses lightweight fields by default', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json(listFixture);
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.list();
+
+    // Should NOT contain sentences or summary fields
+    expect(receivedQuery).not.toContain('sentences {');
+    expect(receivedQuery).not.toContain('summary {');
+    // Should contain basic list fields
+    expect(receivedQuery).toContain('id');
+    expect(receivedQuery).toContain('title');
+  });
+
+  it('includes sentences when includeSentences is true', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcripts: [
+              {
+                ...listFixture.data.transcripts[0],
+                sentences: [
+                  {
+                    index: 0,
+                    text: 'Hello world',
+                    speaker_name: 'Alice',
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    const transcripts = await client.transcripts.list({ includeSentences: true });
+
+    expect(receivedQuery).toContain('sentences {');
+    expect(transcripts[0]?.sentences).toHaveLength(1);
+    expect(transcripts[0]?.sentences[0]?.text).toBe('Hello world');
+  });
+
+  it('includes summary when includeSummary is true', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcripts: [
+              {
+                ...listFixture.data.transcripts[0],
+                summary: {
+                  action_items: '- Test action item',
+                  overview: 'Test overview',
+                },
+              },
+            ],
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    const transcripts = await client.transcripts.list({ includeSummary: true });
+
+    expect(receivedQuery).toContain('summary {');
+    expect(transcripts[0]?.summary?.action_items).toBe('- Test action item');
+  });
+
+  it('includes both when both options are true', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({
+          data: {
+            transcripts: [
+              {
+                ...listFixture.data.transcripts[0],
+                sentences: [{ index: 0, text: 'Test', speaker_name: 'Alice' }],
+                summary: { action_items: '- Test', overview: 'Test' },
+              },
+            ],
+          },
+        });
+      })
+    );
+
+    const client = createClient();
+    await client.transcripts.list({ includeSentences: true, includeSummary: true });
+
+    expect(receivedQuery).toContain('sentences {');
+    expect(receivedQuery).toContain('summary {');
+  });
+});
+
 describe('transcripts.listAll', () => {
+  it('passes through includeSentences option to list()', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        // Return empty array to stop pagination
+        return HttpResponse.json({ data: { transcripts: [] } });
+      })
+    );
+
+    const client = createClient();
+    // Consume the async iterator
+    for await (const _ of client.transcripts.listAll({ includeSentences: true })) {
+      // No-op
+    }
+
+    expect(receivedQuery).toContain('sentences {');
+  });
+
+  it('passes through includeSummary option to list()', async () => {
+    let receivedQuery = '';
+
+    server.use(
+      http.post(API_URL, async ({ request }) => {
+        const body = (await request.json()) as { query: string };
+        receivedQuery = body.query;
+        return HttpResponse.json({ data: { transcripts: [] } });
+      })
+    );
+
+    const client = createClient();
+    for await (const _ of client.transcripts.listAll({ includeSummary: true })) {
+      // No-op
+    }
+
+    expect(receivedQuery).toContain('summary {');
+  });
+
   it('iterates through all pages', async () => {
     let callCount = 0;
 

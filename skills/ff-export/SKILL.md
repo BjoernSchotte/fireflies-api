@@ -56,3 +56,10 @@ npm exec --yes --package=fireflies-api -- fireflies-api export "transcript_123" 
 3. For file output, confirm the destination path with the user.
 
 4. Markdown format is human-readable; JSON is for programmatic use.
+
+## Usage Tips
+
+**Format Selection:**
+- Use Markdown (`.md`) for human-readable documentation (default)
+- Use JSON only when user needs structured data for processing
+- When exporting to stdout, Markdown is easier to read in the terminal
