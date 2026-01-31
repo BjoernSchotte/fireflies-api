@@ -6,10 +6,11 @@ import type {
   DigestMeeting,
   DigestMeetingWithActionItems,
   DigestParticipant,
+  DigestParticipantInfo,
   DigestStats,
   WeeklyDigest,
 } from '../types/digest.js';
-import type { Transcript } from '../types/transcript.js';
+import type { MeetingAttendee, Transcript } from '../types/transcript.js';
 import { extractActionItems } from './action-items.js';
 
 // Re-export types for convenience
@@ -21,6 +22,7 @@ export type {
   DigestMeeting,
   DigestMeetingWithActionItems,
   DigestParticipant,
+  DigestParticipantInfo,
   DigestStats,
   WeeklyDigest,
 } from '../types/digest.js';
@@ -191,9 +193,64 @@ function extractDecisions(transcript: Transcript): string[] {
 }
 
 /**
+ * Build a lookup map of participant names from meeting_attendees across all transcripts.
+ */
+function buildNameLookup(transcripts: Transcript[]): Map<string, string> {
+  const namesByEmail = new Map<string, string>();
+
+  for (const t of transcripts) {
+    for (const attendee of t.meeting_attendees ?? []) {
+      if (!attendee.email) continue;
+
+      const normalizedEmail = attendee.email.toLowerCase();
+      const name = attendee.displayName || attendee.name;
+
+      if (name && !namesByEmail.has(normalizedEmail)) {
+        namesByEmail.set(normalizedEmail, name);
+      }
+    }
+  }
+
+  return namesByEmail;
+}
+
+/**
+ * Count meeting participation for each email across transcripts.
+ */
+function countParticipation(
+  transcripts: Transcript[],
+  namesByEmail: Map<string, string>
+): Map<string, { name: string; meetingCount: number; totalMinutes: number }> {
+  const stats = new Map<string, { name: string; meetingCount: number; totalMinutes: number }>();
+
+  for (const t of transcripts) {
+    const seenInMeeting = new Set<string>();
+
+    for (const email of t.participants ?? []) {
+      const normalizedEmail = email.toLowerCase();
+      if (seenInMeeting.has(normalizedEmail)) continue;
+      seenInMeeting.add(normalizedEmail);
+
+      const existing = stats.get(normalizedEmail) ?? {
+        name: namesByEmail.get(normalizedEmail) || extractNameFromEmail(email),
+        meetingCount: 0,
+        totalMinutes: 0,
+      };
+
+      existing.meetingCount++;
+      existing.totalMinutes += t.duration ?? 0;
+      stats.set(normalizedEmail, existing);
+    }
+  }
+
+  return stats;
+}
+
+/**
  * Aggregate participants from transcripts. Pure function.
  *
  * Deduplicates by normalized email, counts meetings and total time per participant.
+ * Looks up participant names from meeting_attendees data.
  *
  * @param transcripts - Array of transcripts to aggregate
  * @returns Array of participant stats sorted by meeting count descending
@@ -205,44 +262,16 @@ function extractDecisions(transcript: Transcript): string[] {
  * ```
  */
 export function aggregateParticipants(transcripts: Transcript[]): DigestParticipant[] {
-  const stats = new Map<string, { name: string; meetingCount: number; totalMinutes: number }>();
+  const namesByEmail = buildNameLookup(transcripts);
+  const stats = countParticipation(transcripts, namesByEmail);
 
-  for (const t of transcripts) {
-    const participants = t.participants ?? [];
-    const seenInMeeting = new Set<string>();
-
-    for (const email of participants) {
-      const normalizedEmail = email.toLowerCase();
-
-      // Skip duplicate within same meeting
-      if (seenInMeeting.has(normalizedEmail)) continue;
-      seenInMeeting.add(normalizedEmail);
-
-      const existing = stats.get(normalizedEmail) ?? {
-        name: extractNameFromEmail(email),
-        meetingCount: 0,
-        totalMinutes: 0,
-      };
-
-      existing.meetingCount++;
-      existing.totalMinutes += t.duration ?? 0;
-      stats.set(normalizedEmail, existing);
-    }
-  }
-
-  // Convert to array and sort by meeting count descending
-  const result: DigestParticipant[] = [];
-  for (const [email, data] of stats) {
-    result.push({
-      email,
-      name: data.name,
-      meetingCount: data.meetingCount,
-      totalMinutes: data.totalMinutes,
-    });
-  }
-
-  result.sort((a, b) => b.meetingCount - a.meetingCount);
-  return result;
+  // Convert to array sorted by meeting count descending
+  return Array.from(stats, ([email, data]) => ({
+    email,
+    name: data.name,
+    meetingCount: data.meetingCount,
+    totalMinutes: data.totalMinutes,
+  })).sort((a, b) => b.meetingCount - a.meetingCount);
 }
 
 /**
@@ -251,6 +280,33 @@ export function aggregateParticipants(transcripts: Transcript[]): DigestParticip
 function extractNameFromEmail(email: string): string {
   const localPart = email.split('@')[0] ?? email;
   return localPart;
+}
+
+/**
+ * Build participant info list by looking up names from meeting_attendees.
+ * Falls back to extracting name from email local part if not found.
+ */
+function buildParticipantInfoList(
+  emails: string[],
+  attendees: MeetingAttendee[]
+): DigestParticipantInfo[] {
+  // Build a lookup map (case-insensitive)
+  const attendeeMap = new Map<string, MeetingAttendee>();
+  for (const attendee of attendees) {
+    if (attendee.email) {
+      attendeeMap.set(attendee.email.toLowerCase(), attendee);
+    }
+  }
+
+  return emails.map((email) => {
+    const normalizedEmail = email.toLowerCase();
+    const attendee = attendeeMap.get(normalizedEmail);
+
+    return {
+      email: normalizedEmail,
+      name: attendee?.displayName || attendee?.name || extractNameFromEmail(normalizedEmail),
+    };
+  });
 }
 
 /**
@@ -317,7 +373,7 @@ export function aggregateActionItemsForDigest(transcripts: Transcript[]): Digest
         title: t.title,
         date: t.dateString,
         duration: t.duration ?? 0,
-        participantEmails: t.participants ?? [],
+        participants: buildParticipantInfoList(t.participants ?? [], t.meeting_attendees ?? []),
         items: meetingItems,
       });
     }

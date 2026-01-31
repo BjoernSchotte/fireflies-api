@@ -59,6 +59,16 @@ export interface DigestActionItem extends ActionItem {
 }
 
 /**
+ * Participant info with email and resolved name.
+ */
+export interface DigestParticipantInfo {
+  /** Email address */
+  email: string;
+  /** Display name (from meeting_attendees or extracted from email) */
+  name: string;
+}
+
+/**
  * Action items grouped by meeting with meeting context.
  */
 export interface DigestMeetingWithActionItems {
@@ -70,8 +80,8 @@ export interface DigestMeetingWithActionItems {
   date: string;
   /** Duration in minutes */
   duration: number;
-  /** List of participant emails */
-  participantEmails: string[];
+  /** List of participants with name and email */
+  participants: DigestParticipantInfo[];
   /** Action items from this meeting */
   items: DigestActionItem[];
 }

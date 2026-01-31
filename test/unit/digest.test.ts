@@ -443,6 +443,44 @@ describe('aggregateParticipants', () => {
       // Should derive name from email
       expect(participants[0]?.name).toBe('john.doe');
     });
+
+    it('looks up participant names from meeting_attendees', () => {
+      const transcripts = [
+        createTranscript({
+          participants: ['alice@company.com', 'bob@company.com'],
+          meeting_attendees: [
+            { displayName: 'Alice Smith', email: 'alice@company.com', name: 'Alice Smith' },
+            { displayName: '', email: 'bob@company.com', name: 'Bob Jones' },
+          ],
+        }),
+      ];
+
+      const participants = aggregateParticipants(transcripts);
+
+      // Should use displayName first, then name from meeting_attendees
+      expect(participants.find((p) => p.email === 'alice@company.com')?.name).toBe('Alice Smith');
+      expect(participants.find((p) => p.email === 'bob@company.com')?.name).toBe('Bob Jones');
+    });
+
+    it('uses name from meeting_attendees across multiple transcripts', () => {
+      const transcripts = [
+        createTranscript({
+          participants: ['alice@company.com'],
+          meeting_attendees: [],
+        }),
+        createTranscript({
+          participants: ['alice@company.com'],
+          meeting_attendees: [
+            { displayName: 'Alice Smith', email: 'alice@company.com', name: 'Alice Smith' },
+          ],
+        }),
+      ];
+
+      const participants = aggregateParticipants(transcripts);
+
+      // Should find name from second transcript's meeting_attendees
+      expect(participants.find((p) => p.email === 'alice@company.com')?.name).toBe('Alice Smith');
+    });
   });
 });
 
@@ -547,6 +585,84 @@ describe('aggregateActionItemsForDigest', () => {
       const result = aggregateActionItemsForDigest(transcripts);
 
       expect(result.total).toBe(0);
+    });
+  });
+
+  describe('byMeeting grouping', () => {
+    it('groups action items by meeting with participant info', () => {
+      const transcripts = [
+        createTranscript({
+          id: 'meeting-1',
+          title: 'Sprint Planning',
+          dateString: '2024-01-15T10:00:00Z',
+          duration: 45,
+          participants: ['alice@company.com', 'bob@company.com'],
+          meeting_attendees: [
+            { displayName: 'Alice Smith', email: 'alice@company.com', name: 'Alice Smith' },
+            { displayName: 'Bob Jones', email: 'bob@company.com', name: 'Bob Jones' },
+          ],
+          summary: { action_items: '- Task 1\n- Task 2' },
+        }),
+      ];
+
+      const result = aggregateActionItemsForDigest(transcripts);
+
+      expect(result.byMeeting).toHaveLength(1);
+      expect(result.byMeeting[0]).toEqual({
+        id: 'meeting-1',
+        title: 'Sprint Planning',
+        date: '2024-01-15T10:00:00Z',
+        duration: 45,
+        participants: [
+          { email: 'alice@company.com', name: 'Alice Smith' },
+          { email: 'bob@company.com', name: 'Bob Jones' },
+        ],
+        items: expect.any(Array),
+      });
+    });
+
+    it('falls back to email local part when attendee name not found', () => {
+      const transcripts = [
+        createTranscript({
+          participants: ['unknown@company.com', 'alice@company.com'],
+          meeting_attendees: [
+            { displayName: 'Alice Smith', email: 'alice@company.com', name: 'Alice Smith' },
+            // unknown@company.com not in meeting_attendees
+          ],
+          summary: { action_items: '- Task 1' },
+        }),
+      ];
+
+      const result = aggregateActionItemsForDigest(transcripts);
+
+      const meeting = result.byMeeting[0];
+      expect(meeting?.participants).toContainEqual({
+        email: 'unknown@company.com',
+        name: 'unknown',
+      });
+      expect(meeting?.participants).toContainEqual({
+        email: 'alice@company.com',
+        name: 'Alice Smith',
+      });
+    });
+
+    it('handles case-insensitive email lookup', () => {
+      const transcripts = [
+        createTranscript({
+          participants: ['ALICE@Company.com'],
+          meeting_attendees: [
+            { displayName: 'Alice Smith', email: 'alice@company.com', name: 'Alice Smith' },
+          ],
+          summary: { action_items: '- Task 1' },
+        }),
+      ];
+
+      const result = aggregateActionItemsForDigest(transcripts);
+
+      expect(result.byMeeting[0]?.participants).toContainEqual({
+        email: 'alice@company.com',
+        name: 'Alice Smith',
+      });
     });
   });
 });

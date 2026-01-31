@@ -47,7 +47,10 @@ function createDigest(overrides: Partial<WeeklyDigest> = {}): WeeklyDigest {
           title: 'Meeting 1',
           date: '2024-01-08T10:00:00Z',
           duration: 30,
-          participantEmails: ['alice@company.com', 'bob@company.com'],
+          participants: [
+            { email: 'alice@company.com', name: 'Alice Smith' },
+            { email: 'bob@company.com', name: 'Bob Jones' },
+          ],
           items: [
             {
               text: 'Review proposal',
@@ -71,7 +74,7 @@ function createDigest(overrides: Partial<WeeklyDigest> = {}): WeeklyDigest {
           title: 'Meeting 2',
           date: '2024-01-09T10:00:00Z',
           duration: 60,
-          participantEmails: ['bob@company.com'],
+          participants: [{ email: 'bob@company.com', name: 'Bob Jones' }],
           items: [
             {
               text: 'Update docs',

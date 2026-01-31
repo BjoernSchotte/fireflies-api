@@ -59,6 +59,7 @@ export {
   type DigestMeeting,
   type DigestMeetingWithActionItems,
   type DigestParticipant,
+  type DigestParticipantInfo,
   type DigestStats,
   extractHighlights,
   type WeeklyDigest,

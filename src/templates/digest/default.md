@@ -15,9 +15,11 @@ Average duration: **{{stats.averageDuration | duration}}**
 
 {{#actionItems.byMeeting}}
 ### {{title}}
-**{{date | date}}** | {{duration | duration}} | {{participantEmails.length}} participants
+**{{date | date}}** | {{duration | duration}} | {{participants.length}} participants
 
-**Participants:** {{participantEmails | join}}
+{{#participants}}
+- {{name}} ({{email}})
+{{/participants}}
 
 {{#items}}
 - [ ] {{text}}{{#assignee}} *({{assignee}})*{{/assignee}}
@@ -35,7 +37,7 @@ Average duration: **{{stats.averageDuration | duration}}**
 
 ## Participants
 {{#participants}}
-- {{email}} ({{meetingCount}} meetings, {{totalMinutes | duration}})
+- {{name}} ({{email}}) — {{meetingCount}} meetings, {{totalMinutes | duration}}
 {{/participants}}
 
 ---
