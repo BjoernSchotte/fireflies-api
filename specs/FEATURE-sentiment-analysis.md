@@ -47,15 +47,51 @@ The API provides meeting-level sentiment percentages, but no per-speaker breakdo
 
 ## Proposed Solution
 
-### SDK API
+### Architecture: SDK + Pure Helpers
+
+Following "functional core, imperative shell" principle:
+- **SDK layer**: Fetches transcripts from API (existing methods)
+- **Helper layer**: Pure sentiment analysis functions (no API calls)
+- **CLI layer**: Orchestrates fetching and analysis
+
+### SDK API (Data Fetching)
 
 ```typescript
-// New helper: src/helpers/sentiment-analytics.ts
-import { analyzeSentiment, type SentimentAnalytics } from 'fireflies-api';
+// SDK handles API calls - existing methods, no changes needed
+const transcripts = await client.transcripts.list({
+  fromDate: '2024-01-01',
+  toDate: '2024-01-31',
+});
+```
 
-// Single transcript analysis
+### Helper API (Pure Functions)
+
+```typescript
+// src/helpers/sentiment-analytics.ts - Pure functions, no client/API calls
+import {
+  analyzeSentiment,
+  aggregateSentiment,
+  calculateSentimentScore,
+  type SentimentAnalytics,
+  type SentimentInsights,
+} from 'fireflies-api';
+
+// Single transcript analysis (pure)
 const sentiment = analyzeSentiment(transcript);
 
+// Multi-transcript aggregation (pure)
+const insights = aggregateSentiment(transcripts, {
+  groupBy: 'week',
+  speakers: ['John', 'Sarah'],
+});
+
+// Score calculation (pure)
+const score = calculateSentimentScore(sentiments);
+```
+
+### Types
+
+```typescript
 interface SentimentAnalytics {
   overall: Sentiments;           // Meeting-level (from API)
   bySpeaker: SpeakerSentiment[]; // Derived from sentence analysis
@@ -69,14 +105,6 @@ interface SpeakerSentiment {
   sentimentScore: number;
   sentenceCount: number;
 }
-
-// Multi-transcript aggregation
-const insights = await client.transcripts.sentimentInsights({
-  fromDate: '2024-01-01',
-  toDate: '2024-01-31',
-  groupBy: 'week', // 'day' | 'week' | 'month'
-  speakers: ['John', 'Sarah'], // Optional: filter to specific speakers
-});
 
 interface SentimentInsights {
   overall: Sentiments;
@@ -127,11 +155,10 @@ fireflies sentiment --last-week -o table  # Tabular summary
 
 | File | Description |
 |------|-------------|
-| `src/helpers/sentiment-analytics.ts` | Core sentiment analysis logic |
+| `src/helpers/sentiment-analytics.ts` | Pure sentiment analysis functions |
 | `src/types/sentiment.ts` | Sentiment-specific types |
-| `src/graphql/queries/transcripts.ts` | Add sentimentInsights method |
-| `src/cli/commands/sentiment.ts` | CLI command handler |
-| `test/unit/sentiment-analytics.test.ts` | Unit tests |
+| `src/cli/commands/sentiment.ts` | CLI orchestration (SDK → helpers → output) |
+| `test/unit/sentiment-analytics.test.ts` | Pure function tests |
 
 ### Sentiment Score Calculation
 
@@ -192,25 +219,15 @@ Phase 1: Core Helpers (Parallel, Independent)
            │                         │
            └────────────┬────────────┘
                         ▼
-Phase 2: SDK + CLI (Parallel, after Phase 1)
-┌──────────────────────┐  ┌──────────────────────┐
-│ sdk-agent            │  │ cli-agent            │
-│ (general-purpose)    │  │ (general-purpose)    │
-│                      │  │                      │
-│ - sentimentInsights  │  │ - sentiment command  │
-│   method             │  │ - All filter options │
-│ - Uses helpers       │  │ - Plain/table output │
-└──────────┬───────────┘  └──────────┬───────────┘
-           │                         │
-           └────────────┬────────────┘
-                        ▼
-Phase 3: Testing + Polish
+Phase 2: CLI Orchestration (after Phase 1)
 ┌──────────────────────────────────────┐
-│ test-agent (general-purpose)         │
+│ cli-agent (general-purpose)          │
 │                                      │
-│ - Integration tests                  │
-│ - Live E2E with real data            │
-│ - Edge cases (no sentiment data)     │
+│ - sentiment command                  │
+│ - Orchestrates: SDK fetch → helpers  │
+│ - All filter options                 │
+│ - Plain/table output                 │
+│ - Live E2E tests                     │
 └──────────────────────────────────────┘
 ```
 
@@ -250,19 +267,7 @@ TaskCreate({
   activeForm: "Implementing sentiment aggregation..."
 })
 
-// Phase 2: SDK and CLI (blocked by Phase 1)
-TaskCreate({
-  subject: "Add sentimentInsights SDK method",
-  description: `
-    Add to client.transcripts:
-    - sentimentInsights(params) method
-    - Fetches transcripts with summary
-    - Calls aggregateSentiment helper
-    - Returns SentimentInsights
-  `,
-  activeForm: "Adding SDK method..."
-})
-
+// Phase 2: CLI Orchestration (blocked by Phase 1)
 TaskCreate({
   subject: "Implement sentiment CLI command",
   description: `
@@ -360,9 +365,11 @@ describe('sentiment (live)', () => {
   });
 
   it('aggregates sentiment across meetings', async () => {
-    const insights = await client.transcripts.sentimentInsights({
-      limit: 5,
-    });
+    // SDK: fetch transcripts
+    const transcripts = await client.transcripts.list({ limit: 5 });
+
+    // Helper: pure aggregation
+    const insights = aggregateSentiment(transcripts);
 
     expect(insights.totalMeetings).toBeLessThanOrEqual(5);
     expect(insights.overall).toBeDefined();
@@ -374,8 +381,8 @@ describe('sentiment (live)', () => {
 
 ## Acceptance Criteria
 
-- [ ] `analyzeSentiment(transcript)` returns correct analysis
-- [ ] `sentimentInsights()` aggregates across meetings
+- [ ] `analyzeSentiment(transcript)` returns correct analysis (pure)
+- [ ] `aggregateSentiment(transcripts)` aggregates across meetings (pure)
 - [ ] `--group-by` shows trends over time
 - [ ] `--speaker` filters to specific speakers
 - [ ] `fireflies sentiment` CLI works in all modes
@@ -438,8 +445,9 @@ This feature explicitly does NOT:
 
 ```markdown
 ### Added
-- `analyzeSentiment()` helper for single transcript sentiment analysis
-- `client.transcripts.sentimentInsights()` for aggregated sentiment across meetings
+- `analyzeSentiment()` pure helper for single transcript sentiment analysis
+- `aggregateSentiment()` pure helper for multi-transcript aggregation
+- `calculateSentimentScore()` pure helper for score calculation
 - `fireflies sentiment` CLI command with trend visualization
 - `SentimentAnalytics`, `SentimentInsights`, `SpeakerSentiment` types
 ```
@@ -449,9 +457,9 @@ This feature explicitly does NOT:
 ## Implementation Checklist (per CLAUDE.md)
 
 ### Step 1: Identify Layers
-- [ ] Helpers needed: `analyzeSentiment()`, `calculateSentimentScore()`, `aggregateSentiment()`
-- [ ] SDK method: `client.transcripts.sentimentInsights()`
-- [ ] CLI command: `fireflies sentiment`
+- [ ] **SDK layer**: Use existing `client.transcripts.list()` - no new SDK methods needed
+- [ ] **Helpers (pure)**: `analyzeSentiment()`, `aggregateSentiment()`, `calculateSentimentScore()`
+- [ ] **CLI**: `fireflies sentiment` (orchestrates SDK → helpers → output)
 
 ### Step 2: Implement Helpers (TDD)
 - [ ] Create `test/unit/sentiment-analytics.test.ts`
@@ -463,13 +471,14 @@ This feature explicitly does NOT:
 - [ ] Implement aggregation across transcripts
 - [ ] All tests pass
 
-### Step 3: Implement SDK Method
+### Step 3: Implement Types
 - [ ] Create `src/types/sentiment.ts`
-- [ ] Add `sentimentInsights()` to transcripts queries
 - [ ] Export types from `src/index.ts`
+- [ ] Export helpers from `src/index.ts`
 
-### Step 4: Implement CLI
+### Step 4: Implement CLI (Orchestration Layer)
 - [ ] Create `src/cli/commands/sentiment.ts`
+- [ ] CLI orchestrates: SDK fetch → helpers → output
 - [ ] Register in `src/cli/index.ts`
 - [ ] Add `--group-by` and `--speaker` options
 - [ ] Implement table and plain output formats
@@ -507,7 +516,7 @@ function analyzeSentiment(transcript: Transcript): SentimentAnalytics | null {
 
 - Aggregation fetches multiple transcripts - use `batch()` helper
 - Default delay between fetches: 100ms
-- For `sentimentInsights()`, fetch list first (1 call), then details in batch
+- CLI orchestration: fetch list first (1 call), then aggregate with pure helper
 
 ---
 
@@ -574,12 +583,13 @@ Before requesting commit approval:
 const insights = await withProgress(
   { enabled: showProgress, text: 'Analyzing sentiment...' },
   async (update) => {
-    // Update as transcripts are processed
-    return client.transcripts.sentimentInsights(params, {
-      onProgress: (completed, total) => {
-        update(`Analyzing sentiment... ${completed}/${total}`);
-      },
-    });
+    // SDK: fetch transcripts
+    update('Fetching transcripts...');
+    const transcripts = await client.transcripts.list(params);
+
+    // Helper: pure aggregation
+    update('Aggregating sentiment...');
+    return aggregateSentiment(transcripts, options);
   }
 );
 ```
@@ -589,7 +599,7 @@ const insights = await withProgress(
 ## Backward Compatibility
 
 - `analyzeSentiment()` is a new function - no breaking changes
-- `sentimentInsights()` is a new SDK method - no breaking changes
+- `aggregateSentiment()` is a new function - no breaking changes
 - Existing `Sentiments` type in `transcript.ts` is reused, not modified
 
 ---
@@ -643,21 +653,23 @@ export function analyzeSentiment(transcript: Transcript): SentimentAnalytics | n
 export function calculateSentimentScore(sentiments: Sentiments): number;
 
 /**
- * Get aggregated sentiment insights across multiple meetings.
+ * Aggregate sentiment insights across multiple transcripts. Pure function.
  *
- * @param params - Query parameters including date range and grouping
+ * @param transcripts - Array of transcripts to analyze
+ * @param options - Aggregation options including grouping
  * @returns Aggregated insights with trends and extremes
  *
  * @example
  * ```typescript
- * const insights = await client.transcripts.sentimentInsights({
- *   fromDate: '2024-01-01',
- *   toDate: '2024-01-31',
- *   groupBy: 'week',
- * });
+ * const transcripts = await client.transcripts.list({ fromDate, toDate });
+ * const insights = aggregateSentiment(transcripts, { groupBy: 'week' });
  * console.log(`Overall score: ${insights.sentimentScore}`);
  * ```
  */
+export function aggregateSentiment(
+  transcripts: Transcript[],
+  options?: SentimentAggregateOptions
+): SentimentInsights;
 ```
 
 ---

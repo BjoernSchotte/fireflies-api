@@ -57,32 +57,61 @@ interface Summary {
 
 ## Proposed Solution
 
-### SDK API
+### Architecture: SDK + Pure Helpers
+
+Following CLAUDE.md's "functional core, imperative shell" principle:
+- **SDK layer**: Fetches data from API
+- **Helper layer**: Pure functions for aggregation and rendering (no API calls)
+
+### SDK API (Data Fetching)
 
 ```typescript
-// New helper: src/helpers/digest.ts
-import { generateDigest, type WeeklyDigest } from 'fireflies-api';
-
-const digest = await generateDigest(client, {
+// SDK handles API calls - existing method, no changes needed
+const transcripts = await client.transcripts.list({
   fromDate: '2024-01-08',
   toDate: '2024-01-14',
-  // OR use shortcuts
-  period: 'last-week',  // 'last-week' | 'this-week' | 'last-month'
-
-  // Optional filters
   mine: true,
-  organizers: ['me@company.com'],
-  participants: ['client@acme.com'],
+  limit: 100,
+});
 
-  // Content options
+// Or fetch with full details for richer digest
+const fullTranscripts = await client.transcripts.listWithDetails({
+  period: 'last-week',  // Shortcut for date range
+  mine: true,
+});
+```
+
+### Helper API (Pure Functions)
+
+```typescript
+// src/helpers/digest.ts - Pure functions, no client/API calls
+import {
+  buildDigest,
+  calculateStats,
+  aggregateActionItems,
+  extractHighlights,
+  renderDigest,
+  type WeeklyDigest,
+} from 'fireflies-api';
+
+// 1. Build digest from transcripts (pure aggregation)
+const digest = buildDigest(transcripts, {
   includeActionItems: true,
   includeHighlights: true,
   includeStats: true,
   includeSentiment: true,
-
-  // Grouping
-  groupBy: 'day',  // 'day' | 'category' | 'participant' | 'none'
+  groupBy: 'day',
 });
+
+// 2. Render to output format (pure template rendering)
+const output = renderDigest(digest);                              // Default template
+const output = renderDigest(digest, { template: 'compact' });     // Built-in preset
+const output = renderDigest(digest, { template: './spanish.md' }); // Custom file
+
+// Individual pure helpers (composable)
+const stats = calculateStats(transcripts);
+const actionItems = aggregateActionItems(transcripts);
+const highlights = extractHighlights(transcripts);
 
 interface WeeklyDigest {
   period: { from: string; to: string };
@@ -168,6 +197,14 @@ fireflies digest --last-week --stats-only
 
 # With progress indicator
 fireflies digest --last-month --progress
+
+# Custom template from markdown file
+fireflies digest --last-week --template ./my-template.md
+fireflies digest --last-week --template ./templates/spanish.md
+
+# Built-in template variants
+fireflies digest --last-week --template compact    # Minimal output
+fireflies digest --last-week --template executive  # Executive summary style
 ```
 
 ---
@@ -176,7 +213,9 @@ fireflies digest --last-month --progress
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Template approach | **Template literals** | No external deps, simple, sufficient for fixed formats |
+| Template approach | **Markdown with {{variables}}** | No code required, easy to customize, i18n-friendly |
+| Built-in templates | **Named presets** | `default`, `compact`, `executive` for common use cases |
+| Template syntax | **Mustache-like {{var}}** | Simple, widely known, no learning curve |
 | Period shortcuts | **Helper function** | Reusable across CLI commands, consistent date handling |
 | Empty digest handling | **Return empty object** | Not an error - valid scenario with meaningful defaults |
 | Action item source | **summary.action_items** | API-provided, consistent quality vs custom extraction |
@@ -194,94 +233,155 @@ fireflies digest --last-month --progress
 | File | Description |
 |------|-------------|
 | `src/helpers/digest.ts` | Core digest generation logic |
-| `src/helpers/digest-templates.ts` | Markdown/HTML templates |
+| `src/helpers/digest-templates.ts` | Template rendering engine |
+| `src/templates/digest/default.md` | Default digest template |
+| `src/templates/digest/compact.md` | Minimal output template |
+| `src/templates/digest/executive.md` | Executive summary template |
 | `src/cli/commands/digest.ts` | CLI command handler |
 | `test/unit/digest.test.ts` | Unit tests |
+| `test/unit/digest-templates.test.ts` | Template rendering tests |
 
 ### Digest Generation Flow
 
+**CLI/Application code (imperative shell):**
 ```typescript
-// src/helpers/digest.ts
-
-export async function generateDigest(
-  client: FirefliesClient,
-  options: DigestOptions
-): Promise<WeeklyDigest> {
-  // 1. Fetch transcripts for period (with summary)
+// CLI command or user code - orchestrates SDK + helpers
+async function createDigest(client: FirefliesClient, options: DigestCliOptions) {
+  // 1. SDK layer: Fetch data from API
   const transcripts = await client.transcripts.list({
     fromDate: options.fromDate,
     toDate: options.toDate,
     mine: options.mine,
-    includeSummary: true,
   });
 
-  // 2. Fetch full details for each (parallel with batch)
-  const fullTranscripts = await batchAll(
-    transcripts.map(t => t.id),
-    id => client.transcripts.get(id, { includeSummary: true }),
-    { concurrency: 3 }
-  );
+  // 2. Helper layer: Pure aggregation (no API calls)
+  const digest = buildDigest(transcripts, options);
 
-  // 3. Aggregate data
-  const stats = calculateStats(fullTranscripts);
-  const actionItems = aggregateActionItems(fullTranscripts);
-  const highlights = extractHighlights(fullTranscripts);
-  const participants = aggregateParticipants(fullTranscripts);
-  const sentiment = options.includeSentiment
-    ? analyzeSentiment(fullTranscripts)
-    : undefined;
+  // 3. Helper layer: Pure rendering (no API calls)
+  const output = renderDigest(digest, { template: options.template });
+
+  return output;
+}
+```
+
+**Pure helper functions (functional core):**
+```typescript
+// src/helpers/digest.ts - NO client parameter, NO API calls
+
+/** Pure function: aggregate transcripts into digest structure */
+export function buildDigest(
+  transcripts: Transcript[],
+  options: DigestBuildOptions = {}
+): WeeklyDigest {
+  const stats = calculateStats(transcripts);
+  const actionItems = options.includeActionItems !== false
+    ? aggregateActionItems(transcripts)
+    : emptyActionItems();
+  const highlights = options.includeHighlights !== false
+    ? extractHighlights(transcripts)
+    : [];
+  const participants = aggregateParticipants(transcripts);
 
   return {
-    period: { from: options.fromDate, to: options.toDate },
+    period: calculatePeriod(transcripts),
     totalMeetings: transcripts.length,
     totalDuration: stats.totalMinutes,
     stats,
     actionItems,
     highlights,
     participants,
-    sentiment,
-    meetings: transcripts.map(t => ({
-      id: t.id,
-      title: t.title,
-      date: t.dateString,
-      duration: t.duration,
-      participants: t.participants?.length ?? 0,
-    })),
+    meetings: transcripts.map(toMeetingSummary),
   };
 }
+
+/** Pure function: calculate meeting statistics */
+export function calculateStats(transcripts: Transcript[]): DigestStats { ... }
+
+/** Pure function: aggregate action items by assignee */
+export function aggregateActionItems(transcripts: Transcript[]): DigestActionItems { ... }
+
+/** Pure function: extract highlights from summaries */
+export function extractHighlights(transcripts: Transcript[]): DigestHighlight[] { ... }
 ```
 
-### Markdown Template
+### Template System
 
-```typescript
-// src/helpers/digest-templates.ts
+Templates are markdown files with `{{variable}}` placeholders:
 
-export function digestToMarkdown(digest: WeeklyDigest): string {
-  return `
+**Default template (`templates/default.md`):**
+```markdown
 # Weekly Meeting Digest
-**${digest.period.from} to ${digest.period.to}**
+**{{period.from}} to {{period.to}}**
 
 ## Overview
-- **${digest.totalMeetings}** meetings
-- **${formatDuration(digest.totalDuration)}** total time
-- **${digest.actionItems.total}** action items
+- **{{totalMeetings}}** meetings
+- **{{stats.totalMinutes | duration}}** total time
+- **{{actionItems.total}}** action items
 
 ## Meeting Stats
-${formatStats(digest.stats)}
+{{#stats.meetingsByDay}}
+- {{day}}: {{count}} meetings
+{{/stats.meetingsByDay}}
+
+Busiest day: {{stats.busiestDay}}
 
 ## Action Items
-${formatActionItems(digest.actionItems)}
+{{#actionItems.byAssignee}}
+### {{assignee}}
+{{#items}}
+- [ ] {{text}}{{#dueDate}} (due {{dueDate}}){{/dueDate}}
+{{/items}}
+{{/actionItems.byAssignee}}
 
 ## Meeting Highlights
-${formatHighlights(digest.highlights)}
-
-## Participants
-${formatParticipants(digest.participants)}
+{{#highlights}}
+### {{meetingTitle}} ({{meetingDate}})
+{{#keyPoints}}
+- {{.}}
+{{/keyPoints}}
+{{/highlights}}
 
 ---
 *Generated with fireflies-api*
-`;
+```
+
+**Custom Spanish template example (`templates/spanish.md`):**
+```markdown
+# Resumen Semanal de Reuniones
+**{{period.from}} al {{period.to}}**
+
+## Resumen
+- **{{totalMeetings}}** reuniones
+- **{{stats.totalMinutes | duration}}** tiempo total
+- **{{actionItems.total}}** tareas pendientes
+
+## Tareas Pendientes
+{{#actionItems.byAssignee}}
+### Asignado a: {{assignee}}
+{{#items}}
+- [ ] {{text}}
+{{/items}}
+{{/actionItems.byAssignee}}
+
+---
+*Generado con fireflies-api*
+```
+
+**Template rendering:**
+```typescript
+// src/helpers/digest-templates.ts
+
+export function renderDigest(
+  digest: WeeklyDigest,
+  options?: { template?: string }
+): string {
+  const templatePath = resolveTemplate(options?.template ?? 'default');
+  const templateContent = readFileSync(templatePath, 'utf-8');
+  return renderTemplate(templateContent, digest);
 }
+
+// Built-in templates: 'default', 'compact', 'executive'
+// Custom templates: path to .md file
 ```
 
 ---
@@ -312,22 +412,22 @@ Phase 2: Templates + Core (Parallel)
 │ template-agent       │  │ digest-agent         │
 │ (general-purpose)    │  │ (general-purpose)    │
 │                      │  │                      │
-│ - digestToMarkdown   │  │ - generateDigest()   │
-│ - digestToHtml       │  │ - Orchestrates all   │
-│ - Section formatters │  │ - Uses paginateAll   │
-│ - Unit tests         │  │ - Progress callback  │
+│ - renderTemplate()   │  │ - buildDigest()      │
+│ - renderDigest()     │  │ - Combines helpers   │
+│ - Built-in .md files │  │ - Pure function      │
+│ - Unit tests         │  │ - Unit tests         │
 └──────────┬───────────┘  └──────────┬───────────┘
            │                         │
            └────────────┬────────────┘
                         ▼
-Phase 3: CLI + Integration
+Phase 3: CLI (Orchestration Layer)
 ┌──────────────────────────────────────┐
 │ cli-agent (general-purpose)          │
 │                                      │
 │ - digest command                     │
-│ - All filter options                 │
+│ - Orchestrates: SDK → build → render │
+│ - --template option                  │
 │ - Output to file                     │
-│ - Format selection                   │
 │ - Progress integration               │
 │ - Live E2E tests                     │
 └──────────────────────────────────────┘
@@ -367,45 +467,42 @@ TaskCreate({
 
 // Phase 2: Templates and core
 TaskCreate({
-  subject: "Implement digest templates",
+  subject: "Implement template rendering",
   description: `
     Create src/helpers/digest-templates.ts:
-    - digestToMarkdown(digest) - full markdown report
-    - digestToHtml(digest) - HTML version
-    - Section formatters (stats, action items, highlights)
+    - renderTemplate(template, data) - mustache-like parser
+    - renderDigest(digest, options) - loads template, renders
+    - Create built-in templates: default.md, compact.md, executive.md
 
-    No external template engines - use template literals
-    TDD: Write tests verifying output structure
+    TDD: Write tests for variable substitution, loops, filters
   `,
   activeForm: "Implementing templates..."
 })
 
 TaskCreate({
-  subject: "Implement generateDigest core function",
+  subject: "Implement buildDigest core function",
   description: `
     Add to src/helpers/digest.ts:
-    - generateDigest(client, options) main function
-    - Fetch transcripts for period
-    - Call all aggregation helpers
-    - Support progress callback
+    - buildDigest(transcripts, options) - pure function
+    - Combines all aggregation helpers
+    - NO client parameter, NO API calls
     - Return WeeklyDigest object
 
-    Integration test with mock client
+    TDD: Write tests with fixture transcripts
   `,
-  activeForm: "Implementing digest generator..."
+  activeForm: "Implementing buildDigest..."
 })
 
-// Phase 3: CLI
+// Phase 3: CLI (Orchestration Layer)
 TaskCreate({
   subject: "Implement digest CLI command",
   description: `
     Create src/cli/commands/digest.ts:
-    - fireflies digest --last-week
-    - Date range options (--from, --to)
+    - Orchestrates: client.transcripts.list() → buildDigest() → renderDigest()
+    - Date range options (--from, --to, --last-week)
+    - --template option (built-in name or path to .md file)
     - --output file option
-    - --format option (markdown, html, json)
     - --progress integration
-    - Focus flags (--action-items-only, etc.)
   `,
   activeForm: "Implementing CLI..."
 })
@@ -508,20 +605,25 @@ $ fireflies digest --last-week -o report.md
 
 ```typescript
 describe('digest (live)', () => {
-  it('generates digest for last week', async () => {
-    const digest = await generateDigest(client, {
-      period: 'last-week',
+  it('builds digest from real transcripts', async () => {
+    // SDK layer: fetch data
+    const transcripts = await client.transcripts.list({
+      fromDate: getLastWeekStart(),
+      toDate: getLastWeekEnd(),
       mine: true,
     });
 
+    // Helper layer: pure aggregation
+    const digest = buildDigest(transcripts);
+
     expect(digest.totalMeetings).toBeGreaterThanOrEqual(0);
     expect(digest.period.from).toBeDefined();
-    expect(digest.period.to).toBeDefined();
   });
 
-  it('outputs valid markdown', async () => {
-    const digest = await generateDigest(client, { period: 'last-week' });
-    const markdown = digestToMarkdown(digest);
+  it('renders with default template', async () => {
+    const transcripts = await client.transcripts.list({ limit: 5 });
+    const digest = buildDigest(transcripts);
+    const output = renderDigest(digest);
 
     expect(markdown).toContain('# Weekly Meeting Digest');
     expect(markdown).toContain('## Action Items');
@@ -533,15 +635,18 @@ describe('digest (live)', () => {
 
 ## Acceptance Criteria
 
-- [ ] `generateDigest()` aggregates data correctly
-- [ ] Stats include all required metrics
-- [ ] Action items consolidated with assignee grouping
-- [ ] Highlights extracted from summaries
-- [ ] `digestToMarkdown()` produces valid markdown
-- [ ] `digestToHtml()` produces valid HTML
+- [ ] `buildDigest()` aggregates transcripts correctly (pure function)
+- [ ] `calculateStats()` computes all required metrics
+- [ ] `aggregateActionItems()` groups by assignee correctly
+- [ ] `extractHighlights()` extracts from summaries
+- [ ] `renderDigest()` renders with default template
+- [ ] `--template compact` uses built-in compact template
+- [ ] `--template ./custom.md` loads custom template file
+- [ ] Template variables `{{var}}` are replaced correctly
+- [ ] Template loops `{{#items}}...{{/items}}` work
+- [ ] CLI orchestrates: SDK fetch → buildDigest → renderDigest
 - [ ] `fireflies digest` CLI command works
 - [ ] `--output` writes to file
-- [ ] `--format` selects output format
 - [ ] `--progress` shows progress during generation
 - [ ] All tests pass
 - [ ] Exported from `src/index.ts`
@@ -553,7 +658,6 @@ describe('digest (live)', () => {
 This feature explicitly does NOT:
 - Send digests via email (future enhancement)
 - Post to Slack/Teams (future enhancement)
-- Support custom templates (uses fixed formatters)
 - Schedule automatic generation (manual only)
 - Compare current period with previous (use diff feature)
 - Include transcript content (summaries only)
@@ -589,6 +693,7 @@ This feature explicitly does NOT:
 | `includeSentiment` | `false` | Exclude sentiment (requires extra processing) |
 | `groupBy` | `'none'` | No grouping |
 | `format` | `'markdown'` | Output format |
+| `template` | `'default'` | Built-in template or path to custom .md file |
 | `concurrency` | `3` | Parallel transcript fetches |
 
 ---
@@ -597,10 +702,13 @@ This feature explicitly does NOT:
 
 ```markdown
 ### Added
-- `generateDigest()` helper for comprehensive meeting digests
-- `digestToMarkdown()` and `digestToHtml()` template formatters
+- `buildDigest()` pure helper for aggregating transcripts into digest
+- `renderDigest()` pure helper with customizable markdown templates
+- `calculateStats()`, `aggregateActionItems()`, `extractHighlights()` composable helpers
+- Built-in templates: `default`, `compact`, `executive`
+- Custom template support via `--template path/to/template.md`
 - `fireflies digest` CLI command with period-based generation
-- `WeeklyDigest`, `DigestOptions`, `DigestStats` types
+- `WeeklyDigest`, `DigestBuildOptions`, `RenderOptions` types
 ```
 
 ---
@@ -608,9 +716,10 @@ This feature explicitly does NOT:
 ## Implementation Checklist (per CLAUDE.md)
 
 ### Step 1: Identify Layers
-- [ ] Helpers needed: `calculateStats()`, `extractHighlights()`, `aggregateParticipants()`, `generateDigest()`, `digestToMarkdown()`, `digestToHtml()`
-- [ ] SDK method: None (helper uses client internally)
-- [ ] CLI command: `fireflies digest`
+- [ ] **SDK layer**: Use existing `client.transcripts.list()` - no new SDK methods needed
+- [ ] **Helpers (pure)**: `buildDigest()`, `calculateStats()`, `extractHighlights()`, `aggregateParticipants()`, `aggregateActionItems()`
+- [ ] **Templates (pure)**: `renderDigest()`, `renderTemplate()` + built-in `.md` files
+- [ ] **CLI**: `fireflies digest` with `--template` option (orchestrates SDK + helpers)
 
 ### Step 2: Implement Helpers (TDD) - Phase 1: Aggregators
 - [ ] Create `test/unit/digest.test.ts`
@@ -623,14 +732,16 @@ This feature explicitly does NOT:
 
 ### Step 2b: Implement Templates (TDD) - Phase 2
 - [ ] Create `test/unit/digest-templates.test.ts`
-- [ ] Write failing tests for `digestToMarkdown()`
-- [ ] Implement in `src/helpers/digest-templates.ts`
-- [ ] Write failing tests for `digestToHtml()`
-- [ ] Implement HTML template
+- [ ] Write failing tests for `renderTemplate()` (variable substitution)
+- [ ] Implement mustache-like template parser in `src/helpers/digest-templates.ts`
+- [ ] Write failing tests for `renderDigest()` with built-in templates
+- [ ] Create built-in templates: `default.md`, `compact.md`, `executive.md`
+- [ ] Write failing tests for custom template file loading
+- [ ] Implement custom template file support
 
 ### Step 2c: Implement Core (TDD) - Phase 3
-- [ ] Write failing tests for `generateDigest()`
-- [ ] Implement main orchestration function
+- [ ] Write failing tests for `buildDigest()` (combines all aggregators)
+- [ ] Implement `buildDigest()` - pure function, no client
 - [ ] All tests pass
 
 ### Step 3: Implement Types
@@ -638,11 +749,12 @@ This feature explicitly does NOT:
 - [ ] Export types from `src/index.ts`
 - [ ] Export helpers from `src/index.ts`
 
-### Step 4: Implement CLI
+### Step 4: Implement CLI (Orchestration Layer)
 - [ ] Create `src/cli/commands/digest.ts`
 - [ ] Register in `src/cli/index.ts`
+- [ ] CLI orchestrates: SDK fetch → `buildDigest()` → `renderDigest()`
+- [ ] Add `--template` option (path or built-in name)
 - [ ] Add `--output` file option
-- [ ] Add `--format` option
 - [ ] Integrate progress indicator
 
 ### Step 5: Verification
@@ -708,18 +820,29 @@ registerDigestCommand(program);  // ADD THIS
 
 Create `src/types/digest.ts`:
 ```typescript
-export interface DigestOptions {
-  fromDate?: string;
-  toDate?: string;
-  period?: 'last-week' | 'this-week' | 'last-month';
-  mine?: boolean;
-  organizers?: string[];
-  participants?: string[];
+/** Options for buildDigest() - pure aggregation */
+export interface DigestBuildOptions {
   includeActionItems?: boolean;
   includeHighlights?: boolean;
   includeStats?: boolean;
   includeSentiment?: boolean;
   groupBy?: 'day' | 'category' | 'participant' | 'none';
+}
+
+/** Options for renderDigest() - pure template rendering */
+export interface RenderOptions {
+  /** Built-in template name or path to custom .md file */
+  template?: 'default' | 'compact' | 'executive' | string;
+}
+
+/** CLI options - combines SDK params + build + render options */
+export interface DigestCliOptions {
+  fromDate?: string;
+  toDate?: string;
+  period?: 'last-week' | 'this-week' | 'last-month';
+  mine?: boolean;
+  template?: string;
+  output?: string;
 }
 
 export interface WeeklyDigest {
@@ -796,8 +919,9 @@ const digest = await withProgress(
 
 ## Backward Compatibility
 
-- `generateDigest()` is a new function - no breaking changes
-- `digestToMarkdown()` is a new function - no breaking changes
+- `buildDigest()` is a new function - no breaking changes
+- `renderDigest()` is a new function - no breaking changes
+- `renderTemplate()` is a new function - no breaking changes
 - No changes to existing types
 - All new helpers are additive
 
@@ -829,58 +953,48 @@ Create test fixtures in `test/fixtures/digest/`:
 All public functions must have JSDoc:
 ```typescript
 /**
- * Generate a comprehensive digest for meetings in a time period.
+ * Build a digest from transcripts. Pure function - no API calls.
  *
- * @param client - Fireflies client instance
- * @param options - Digest generation options including date range and filters
+ * @param transcripts - Array of transcripts to aggregate
+ * @param options - Build options for filtering sections
  * @returns Weekly digest with stats, action items, highlights, and participants
  *
  * @example
  * ```typescript
- * const digest = await generateDigest(client, {
- *   period: 'last-week',
- *   mine: true,
+ * const transcripts = await client.transcripts.list({ period: 'last-week' });
+ * const digest = buildDigest(transcripts, {
  *   includeActionItems: true,
  *   includeHighlights: true,
  * });
- * console.log(`${digest.totalMeetings} meetings, ${digest.actionItems.total} action items`);
+ * console.log(`${digest.totalMeetings} meetings`);
  * ```
  */
-export async function generateDigest(
-  client: FirefliesClient,
-  options: DigestOptions
-): Promise<WeeklyDigest>;
+export function buildDigest(
+  transcripts: Transcript[],
+  options?: DigestBuildOptions
+): WeeklyDigest;
 
 /**
- * Convert digest to markdown format.
+ * Render digest using a template. Pure function.
  *
- * @param digest - Digest to convert
- * @returns Markdown string suitable for reports or documentation
+ * @param digest - Digest to render
+ * @param options - Template options (built-in name or path to .md file)
+ * @returns Rendered string (markdown by default)
  *
  * @example
  * ```typescript
- * const markdown = digestToMarkdown(digest);
- * await writeFile('weekly-report.md', markdown);
+ * const output = renderDigest(digest);                          // Default
+ * const output = renderDigest(digest, { template: 'compact' }); // Built-in
+ * const output = renderDigest(digest, { template: './es.md' }); // Custom
  * ```
  */
-export function digestToMarkdown(digest: WeeklyDigest): string;
+export function renderDigest(
+  digest: WeeklyDigest,
+  options?: RenderOptions
+): string;
 
 /**
- * Convert digest to HTML format.
- *
- * @param digest - Digest to convert
- * @returns HTML string suitable for emails or web display
- *
- * @example
- * ```typescript
- * const html = digestToHtml(digest);
- * await sendEmail({ body: html });
- * ```
- */
-export function digestToHtml(digest: WeeklyDigest): string;
-
-/**
- * Calculate meeting statistics from transcripts.
+ * Calculate meeting statistics from transcripts. Pure function.
  *
  * @param transcripts - Array of transcripts to analyze
  * @returns Statistics including totals, averages, and by-day breakdown
@@ -908,20 +1022,36 @@ export function calculateStats(transcripts: Transcript[]): DigestStats;
 
 ## Code Patterns to Follow
 
-Based on existing codebase patterns:
+Based on existing codebase patterns and "functional core, imperative shell":
 
 ```typescript
-// 1. Use batchAll for collecting multiple transcripts
-import { batchAll } from './batch.js';
+// 1. CLI as orchestration layer (imperative shell)
+// src/cli/commands/digest.ts
+async function digestCommand(options: DigestCliOptions) {
+  // SDK layer: fetch data
+  const transcripts = await client.transcripts.list({
+    fromDate: options.fromDate,
+    toDate: options.toDate,
+    mine: options.mine,
+  });
 
-const fullTranscripts = await batchAll(
-  transcripts.map(t => t.id),
-  id => client.transcripts.get(id, { includeSummary: true }),
-  { concurrency: 3, continueOnError: true }
-);
+  // Helper layer: pure aggregation
+  const digest = buildDigest(transcripts, options);
 
-// 2. Aggregation pattern from meeting-insights.ts
-function aggregateActionItems(transcripts: Transcript[]): DigestActionItems {
+  // Helper layer: pure rendering
+  const output = renderDigest(digest, { template: options.template });
+
+  // Output
+  if (options.output) {
+    writeFileSync(options.output, output);
+  } else {
+    console.log(output);
+  }
+}
+
+// 2. Pure aggregation helpers (functional core) - NO client parameter
+// src/helpers/digest.ts
+export function aggregateActionItems(transcripts: Transcript[]): DigestActionItems {
   const byAssignee = new Map<string, ActionItem[]>();
 
   for (const t of transcripts) {
@@ -936,36 +1066,27 @@ function aggregateActionItems(transcripts: Transcript[]): DigestActionItems {
   return {
     total: /* count */,
     byAssignee: Object.fromEntries(byAssignee),
-    // ...
   };
 }
 
-// 3. Template string pattern (no external template engines)
-export function digestToMarkdown(digest: WeeklyDigest): string {
-  return `# Weekly Meeting Digest
-**${digest.period.from} to ${digest.period.to}**
-
-## Overview
-- **${digest.totalMeetings}** meetings
-- **${formatDuration(digest.stats.totalMinutes)}** total time
-
-${formatActionItemsSection(digest.actionItems)}
-`;
+// 3. Template rendering with mustache-like syntax
+// src/helpers/digest-templates.ts
+export function renderDigest(digest: WeeklyDigest, options?: RenderOptions): string {
+  const templatePath = resolveTemplate(options?.template ?? 'default');
+  const template = readFileSync(templatePath, 'utf-8');
+  return renderTemplate(template, digest);
 }
 
-// 4. Period calculation helpers
-function getPeriodDates(period: 'last-week' | 'this-week' | 'last-month'): {
-  fromDate: string;
-  toDate: string;
-} {
-  const now = new Date();
-  // ... calculate based on period
+function renderTemplate(template: string, data: object): string {
+  // Replace {{var}} with data.var
+  // Handle {{#items}}...{{/items}} loops
+  // Handle {{var | filter}} filters
 }
 
-// 5. Empty state with meaningful defaults
-function emptyDigest(period: { from: string; to: string }): WeeklyDigest {
+// 4. Empty state with meaningful defaults
+function emptyDigest(): WeeklyDigest {
   return {
-    period,
+    period: { from: '', to: '' },
     totalMeetings: 0,
     totalDuration: 0,
     stats: emptyStats(),

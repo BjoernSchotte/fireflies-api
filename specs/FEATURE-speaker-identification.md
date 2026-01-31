@@ -29,18 +29,37 @@ Users want to:
 
 ## Proposed Solution
 
-### SDK API
+### Architecture: SDK + Pure Helpers
+
+Following "functional core, imperative shell" principle:
+- **SDK layer**: Fetches transcripts from API (existing methods)
+- **Helper layer**: Pure speaker analysis functions (no API calls)
+- **CLI layer**: Orchestrates fetching and analysis
+
+### SDK API (Data Fetching)
 
 ```typescript
-// Enhanced speaker analytics
+// SDK handles API calls - existing methods, no changes needed
+const transcripts = await client.transcripts.list({
+  fromDate: '2024-01-01',
+  toDate: '2024-01-31',
+});
+```
+
+### Helper API (Pure Functions)
+
+```typescript
+// src/helpers/speaker-*.ts - Pure functions, no client/API calls
 import {
   analyzeSpeakers,
   buildSpeakerProfile,
+  mergeSpeakers,
+  nameSimilarity,
   type SpeakerProfile,
   type SpeakerMatchOptions,
 } from 'fireflies-api';
 
-// Single transcript with improved merging
+// Single transcript with improved merging (pure)
 const analytics = analyzeSpeakers(transcript, {
   mergeSpeakersByName: true,
   fuzzyMatch: true,           // NEW: Enable fuzzy matching
@@ -48,11 +67,9 @@ const analytics = analyzeSpeakers(transcript, {
   linkToParticipants: true,   // NEW: Match to participant emails
 });
 
-// Cross-meeting speaker profile
-const profile = await buildSpeakerProfile(client, {
+// Cross-meeting speaker profile (pure - takes transcripts, not client)
+const profile = buildSpeakerProfile(transcripts, {
   speakerName: 'John Smith',  // Or email
-  fromDate: '2024-01-01',
-  toDate: '2024-01-31',
   fuzzyMatch: true,
 });
 
@@ -248,27 +265,41 @@ export function linkSpeakersToParticipants(
 
 ### Cross-Meeting Profile
 
+**CLI Orchestration (imperative shell):**
 ```typescript
-// src/helpers/speaker-profile.ts
-
-export async function buildSpeakerProfile(
-  client: FirefliesClient,
-  options: SpeakerProfileOptions
-): Promise<SpeakerProfile> {
-  // 1. Fetch transcripts in date range
+// src/cli/commands/speakers.ts - Orchestration layer
+async function speakerProfileCommand(options: SpeakerProfileCliOptions) {
+  // 1. SDK layer: Fetch transcripts
   const transcripts = await client.transcripts.list({
     fromDate: options.fromDate,
     toDate: options.toDate,
   });
 
-  // 2. For each transcript, find matching speaker
+  // 2. Helper layer: Pure profile building
+  const profile = buildSpeakerProfile(transcripts, {
+    speakerName: options.speakerName,
+    fuzzyMatch: options.fuzzyMatch,
+  });
+
+  // 3. Output
+  output(profile, options.format);
+}
+```
+
+**Pure helper function (functional core):**
+```typescript
+// src/helpers/speaker-profile.ts - NO client parameter, NO API calls
+
+export function buildSpeakerProfile(
+  transcripts: Transcript[],
+  options: SpeakerProfileOptions
+): SpeakerProfile {
   const meetings: SpeakerProfile['meetings'] = [];
   const alternateNames = new Set<string>();
 
   for (const t of transcripts) {
-    const full = await client.transcripts.get(t.id);
     const matchedSpeaker = findMatchingSpeaker(
-      full.speakers,
+      t.speakers,
       options.speakerName,
       options.fuzzyMatch
     );
@@ -280,7 +311,7 @@ export async function buildSpeakerProfile(
         title: t.title,
         date: t.dateString,
         talkTime: matchedSpeaker.talkTime,
-        talkPercent: calculateTalkPercent(matchedSpeaker, full),
+        talkPercent: calculateTalkPercent(matchedSpeaker, t),
         speakerNameUsed: matchedSpeaker.name,
       });
     }
@@ -388,7 +419,7 @@ TaskCreate({
   subject: "Implement cross-meeting speaker profile",
   description: `
     Create src/helpers/speaker-profile.ts:
-    - buildSpeakerProfile(client, options)
+    - buildSpeakerProfile(transcripts, options) - PURE function, no client
     - Find speaker across multiple transcripts
     - Aggregate talk time and patterns
     - Track name variations
@@ -540,16 +571,16 @@ describe('speaker identification (live)', () => {
   });
 
   it('builds speaker profile across meetings', async () => {
-    // Get a speaker name from recent transcript
-    const transcripts = await client.transcripts.list({ limit: 1 });
-    const transcript = await client.transcripts.get(transcripts[0].id);
-    const speakerName = transcript.speakers[0]?.name;
+    // SDK: Fetch transcripts
+    const transcripts = await client.transcripts.list({ limit: 10 });
 
+    // Get a speaker name from first transcript
+    const speakerName = transcripts[0]?.speakers?.[0]?.name;
     if (!speakerName) return;
 
-    const profile = await buildSpeakerProfile(client, {
+    // Helper: Pure profile building
+    const profile = buildSpeakerProfile(transcripts, {
       speakerName,
-      period: 'last-month',
       fuzzyMatch: true,
     });
 
@@ -911,26 +942,26 @@ All public functions must have JSDoc:
 export function nameSimilarity(name1: string, name2: string): number;
 
 /**
- * Build a cross-meeting profile for a speaker.
+ * Build a cross-meeting profile for a speaker. Pure function.
  *
- * @param client - Fireflies client instance
+ * @param transcripts - Array of transcripts to search
  * @param options - Profile building options
  * @returns Speaker profile with aggregated stats and meeting history
  *
  * @example
  * ```typescript
- * const profile = await buildSpeakerProfile(client, {
+ * const transcripts = await client.transcripts.list({ period: 'last-month' });
+ * const profile = buildSpeakerProfile(transcripts, {
  *   speakerName: 'John Smith',
- *   period: 'last-month',
  *   fuzzyMatch: true,
  * });
  * console.log(`${profile.primaryName}: ${profile.totalMeetings} meetings`);
  * ```
  */
-export async function buildSpeakerProfile(
-  client: FirefliesClient,
+export function buildSpeakerProfile(
+  transcripts: Transcript[],
   options: SpeakerProfileOptions
-): Promise<SpeakerProfile>;
+): SpeakerProfile;
 ```
 
 ---
@@ -1003,19 +1034,21 @@ function linkSpeakersToParticipants(
   return links;
 }
 
-// 5. Profile building with progress
-export async function buildSpeakerProfile(
-  client: FirefliesClient,
+// 5. Profile building - pure function (CLI handles fetching)
+export function buildSpeakerProfile(
+  transcripts: Transcript[],
   options: SpeakerProfileOptions
-): Promise<SpeakerProfile> {
-  // Use pagination for large date ranges
+): SpeakerProfile {
   const meetings: SpeakerMeetingEntry[] = [];
 
-  for await (const transcript of paginateAll(
-    (skip, limit) => client.transcripts.list({ ...params, skip, limit })
-  )) {
-    // Process each transcript
+  for (const transcript of transcripts) {
+    const match = findMatchingSpeaker(transcript.speakers, options.speakerName);
+    if (match) {
+      meetings.push(/* ... */);
+    }
   }
+
+  return { primaryName: options.speakerName, meetings, /* ... */ };
 }
 ```
 

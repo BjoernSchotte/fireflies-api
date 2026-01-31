@@ -23,34 +23,54 @@ Currently, users can only export one transcript at a time via `fireflies export 
 
 ## Proposed Solution
 
-### SDK API
+### Architecture: SDK + Pure Helpers
+
+Following "functional core, imperative shell" principle:
+- **SDK layer**: Fetches transcripts from API (existing methods)
+- **Helper layer**: Pure format conversion functions (no API calls)
+- **CLI layer**: Orchestrates fetching, conversion, and file writing
+
+### SDK API (Data Fetching)
 
 ```typescript
-// New helper function
-import { bulkExport, type BulkExportOptions } from 'fireflies-api';
-
-const results = await bulkExport(client, {
-  // Selection (one of these)
-  transcriptIds: ['id1', 'id2', 'id3'],
-  // OR use list params
+// SDK handles API calls - existing methods, no changes needed
+const transcripts = await client.transcripts.list({
   fromDate: '2024-01-01',
   toDate: '2024-01-31',
   mine: true,
-  limit: 50,
-
-  // Export options
-  format: 'markdown', // 'markdown' | 'json' | 'txt' | 'csv'
-  outputDir: './exports',
-
-  // Performance
-  concurrency: 3,
-
-  // Callbacks
-  onProgress: (completed, total) => console.log(`${completed}/${total}`),
-  onError: (id, error) => console.error(`Failed: ${id}`),
 });
 
-// Results
+// Fetch full transcript content for each
+const fullTranscript = await client.transcripts.get(id);
+```
+
+### Helper API (Pure Functions)
+
+```typescript
+// src/helpers/export-formats.ts - Pure functions, no client/API calls
+import {
+  transcriptToMarkdown,
+  transcriptToJson,
+  transcriptToText,
+  transcriptToCsv,
+  exportTranscript,
+  type ExportFormat,
+} from 'fireflies-api';
+
+// Convert single transcript to format (pure)
+const markdown = transcriptToMarkdown(transcript);
+const json = transcriptToJson(transcript);
+const text = transcriptToText(transcript);
+const csv = transcriptToCsv(transcript);
+
+// Generic export helper (pure)
+const content = exportTranscript(transcript, 'markdown');
+const content = exportTranscript(transcript, 'csv');
+```
+
+### Result Types
+
+```typescript
 interface BulkExportResult {
   succeeded: Array<{ id: string; path: string }>;
   failed: Array<{ id: string; error: Error }>;
@@ -91,11 +111,9 @@ fireflies export-bulk --last-month --mine --organizer me@company.com -o ./export
 
 | File | Description |
 |------|-------------|
-| `src/helpers/bulk-export.ts` | Core bulk export logic |
-| `src/helpers/export-formats.ts` | Format converters (JSON, TXT, CSV) |
-| `src/cli/commands/export-bulk.ts` | CLI command handler |
-| `test/unit/bulk-export.test.ts` | Unit tests |
-| `test/unit/export-formats.test.ts` | Format converter tests |
+| `src/helpers/export-formats.ts` | Pure format converters (markdown, JSON, TXT, CSV) |
+| `src/cli/commands/export-bulk.ts` | CLI orchestration (SDK → helpers → file I/O) |
+| `test/unit/export-formats.test.ts` | Pure function tests |
 
 ### Export Formats
 
@@ -122,23 +140,64 @@ export function transcriptToJson(transcript: Transcript): string {
 // Markdown already exists in src/helpers/markdown.ts
 ```
 
-### Bulk Export Logic
+### CLI Orchestration Logic
 
 ```typescript
-// src/helpers/bulk-export.ts
-export async function bulkExport(
-  client: FirefliesClient,
-  options: BulkExportOptions
-): Promise<BulkExportResult> {
-  // 1. Resolve transcript list (from IDs or query params)
-  // 2. Create output directory if needed
-  // 3. Use batch() helper with concurrency limit
-  // 4. For each transcript:
-  //    - Fetch full content
-  //    - Convert to target format
-  //    - Write to file
-  //    - Report progress
-  // 5. Return results summary
+// src/cli/commands/export-bulk.ts - Orchestration layer
+async function exportBulkCommand(options: ExportBulkCliOptions) {
+  // 1. SDK layer: Fetch transcript list
+  const transcripts = await client.transcripts.list({
+    fromDate: options.fromDate,
+    toDate: options.toDate,
+    mine: options.mine,
+  });
+
+  // 2. Create output directory
+  await mkdir(options.outputDir, { recursive: true });
+
+  // 3. Process each transcript
+  const results: BulkExportResult = { succeeded: [], failed: [], totalExported: 0, totalFailed: 0 };
+
+  for await (const item of batch(transcripts, async (t) => {
+    // SDK: Fetch full transcript
+    const full = await client.transcripts.get(t.id);
+
+    // Helper: Pure format conversion
+    const content = exportTranscript(full, options.format);
+
+    // File I/O: Write to disk
+    const path = join(options.outputDir, `${t.id}.${options.format}`);
+    await writeFile(path, content);
+
+    return { id: t.id, path };
+  }, { concurrency: options.concurrency })) {
+    if (item.status === 'fulfilled') {
+      results.succeeded.push(item.value);
+      results.totalExported++;
+    } else {
+      results.failed.push({ id: item.id, error: item.reason });
+      results.totalFailed++;
+    }
+  }
+
+  return results;
+}
+```
+
+### Pure Export Helper
+
+```typescript
+// src/helpers/export-formats.ts - Pure function, no I/O
+export function exportTranscript(
+  transcript: Transcript,
+  format: ExportFormat
+): string {
+  switch (format) {
+    case 'markdown': return transcriptToMarkdown(transcript);
+    case 'json': return transcriptToJson(transcript);
+    case 'txt': return transcriptToText(transcript);
+    case 'csv': return transcriptToCsv(transcript);
+  }
 }
 ```
 
@@ -163,15 +222,15 @@ Phase 1: Format Converters (Parallel, Independent)
            │                         │
            └────────────┬────────────┘
                         ▼
-Phase 2: Core Logic + CLI (Parallel, after Phase 1)
-┌──────────────────────┐  ┌──────────────────────┐
-│ bulk-export-agent    │  │ cli-agent            │
-│ (general-purpose)    │  │ (general-purpose)    │
-│                      │  │                      │
-│ - bulkExport()       │  │ - export-bulk cmd    │
-│ - Progress tracking  │  │ - All CLI options    │
-│ - Error handling     │  │ - Output formatting  │
-│ - File writing       │  │ - Progress display   │
+Phase 2: CLI Orchestration (after Phase 1)
+┌──────────────────────────────────────────────┐
+│ cli-agent (general-purpose)                  │
+│                                              │
+│ - export-bulk command                        │
+│ - Orchestrates: SDK fetch → helper → write   │
+│ - Progress tracking with batch()             │
+│ - Error handling and reporting               │
+│ - All CLI options                            │
 └──────────┬───────────┘  └──────────┬───────────┘
            │                         │
            └────────────┬────────────┘
