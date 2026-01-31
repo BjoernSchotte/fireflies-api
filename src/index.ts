@@ -64,7 +64,12 @@ export {
   extractHighlights,
   type WeeklyDigest,
 } from './helpers/digest.js';
-export { type RenderOptions, renderDigest, renderTemplate } from './helpers/digest-templates.js';
+export {
+  type RenderOptions,
+  renderDigest,
+  renderDigestHtml,
+  renderTemplate,
+} from './helpers/digest-templates.js';
 export { extractDomain, hasExternalParticipants } from './helpers/domain-utils.js';
 export {
   type ExternalQuestion,

@@ -1,12 +1,46 @@
 import { writeFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import { buildDigest } from '../../helpers/digest.js';
-import { renderDigest } from '../../helpers/digest-templates.js';
+import { renderDigest, renderDigestHtml } from '../../helpers/digest-templates.js';
+import type { WeeklyDigest } from '../../types/digest.js';
+import type { Transcript } from '../../types/transcript.js';
 import { getClient, getOutputFormat, isProgressEnabled } from '../utils/client.js';
 import { resolveDateRange } from '../utils/date.js';
 import { withErrorHandling } from '../utils/error.js';
 import { output, writeLine } from '../utils/output.js';
 import { withProgress } from '../utils/progress.js';
+
+interface DigestResult {
+  digest: WeeklyDigest | null;
+  rendered: string | null;
+  transcriptCount: number;
+}
+
+interface DigestOptions {
+  actionItems: boolean;
+  highlights: boolean;
+  statsOnly: boolean;
+  template: string;
+  format?: string;
+}
+
+function buildDigestFromTranscripts(transcripts: Transcript[], opts: DigestOptions): WeeklyDigest {
+  return buildDigest(transcripts, {
+    includeActionItems: opts.actionItems !== false && !opts.statsOnly,
+    includeHighlights: opts.highlights !== false && !opts.statsOnly,
+    includeStats: true,
+  });
+}
+
+function renderDigestOutput(digest: WeeklyDigest, outputFormat: string, template: string): string {
+  if (outputFormat === 'json') {
+    return JSON.stringify(digest, null, 2);
+  }
+  if (outputFormat === 'html') {
+    return renderDigestHtml(digest);
+  }
+  return renderDigest(digest, { template });
+}
 
 export function registerDigestCommand(program: Command): void {
   program
@@ -32,6 +66,7 @@ export function registerDigestCommand(program: Command): void {
     )
     // Output options
     .option('-o, --output-file <path>', 'Write digest to file')
+    .option('--format <format>', 'Output format: markdown, html, json (default: markdown)')
     // Content options
     .option('--no-action-items', 'Exclude action items section')
     .option('--no-highlights', 'Exclude highlights section')
@@ -52,8 +87,7 @@ export function registerDigestCommand(program: Command): void {
 
         const digestOutput = await withProgress(
           { enabled: showProgress, text: 'Generating digest...' },
-          async (update) => {
-            // Fetch transcripts
+          async (update): Promise<DigestResult> => {
             update('Fetching transcripts...');
             const transcripts = await client.transcripts.list({
               fromDate,
@@ -61,39 +95,26 @@ export function registerDigestCommand(program: Command): void {
               mine: opts.mine,
               external: opts.external,
               limit: opts.limit ? Number.parseInt(opts.limit, 10) : undefined,
-              includeSummary: true, // Required for action items and highlights
+              includeSummary: true,
             });
 
             if (transcripts.length === 0) {
               return { digest: null, rendered: null, transcriptCount: 0 };
             }
 
-            // Build digest
             update(`Building digest from ${transcripts.length} transcripts...`);
-            const buildOptions = {
-              includeActionItems: opts.actionItems !== false && !opts.statsOnly,
-              includeHighlights: opts.highlights !== false && !opts.statsOnly,
-              includeStats: true,
-            };
-            const digest = buildDigest(transcripts, buildOptions);
+            const digest = buildDigestFromTranscripts(transcripts, opts);
 
-            // Render output
             update('Rendering output...');
-            let rendered: string;
-            if (format === 'json') {
-              // For JSON output, return the raw digest object
-              rendered = JSON.stringify(digest, null, 2);
-            } else {
-              // For other formats, render using template
-              rendered = renderDigest(digest, { template: opts.template });
-            }
+            const outputFormat = opts.format || (format === 'json' ? 'json' : 'markdown');
+            const rendered = renderDigestOutput(digest, outputFormat, opts.template);
 
             return { digest, rendered, transcriptCount: transcripts.length };
           }
         );
 
         // Handle empty result
-        if (!digestOutput.digest) {
+        if (!digestOutput.digest || !digestOutput.rendered) {
           writeLine('No transcripts found for the specified date range.');
           return;
         }
