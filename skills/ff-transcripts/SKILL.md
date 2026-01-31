@@ -28,6 +28,7 @@ npm exec --yes --package=fireflies-api -- fireflies-api transcripts list [option
 - `--to <date>` - End date (YYYY-MM-DD) - only if shortcuts don't fit
 - `--mine` - Only my transcripts (I organized)
 - `--participant-me` - Only meetings where I am a participant
+- `--external` - Only meetings with external (non-company) participants
 - `--keyword <text>` - Filter by keyword
 - `--organizer <email>` - Filter by organizer (repeatable)
 - `--participant <email>` - Filter by participant (repeatable)
@@ -100,22 +101,15 @@ npm exec --yes --package=fireflies-api -- fireflies-api transcripts delete <id> 
 
 **DO NOT:**
 - Run `--help` - this skill documents all options
-- Invent options (e.g., `--fields`, `--external` do NOT exist on transcripts commands)
+- Invent options (e.g., `--fields` does NOT exist)
 - Use `--from/--to` when shortcuts work - use `--last-week` instead
 - Output JSON by default - always use `-o table` or `-o plain`
-- Pipe to jq/grep to filter - the data you need may not be in the output
-- Loop through transcripts with `get` to work around missing filters - explain the limitation
+- Pipe to jq/grep to filter - use built-in flags instead
 
 **DO:**
 - Use date shortcuts: `--last-week`, `--last-month`, `--days N`
 - Always include `-o table` (or `-o plain`) for human-readable output
-- Explain limitations: "filtering by external participants isn't available for listing, but `insights --external` provides analytics"
-
-**DATA LIMITATIONS - `transcripts list` only returns:**
-- id, title, date, duration, organizer_email
-- Does NOT return: participants, sentences, summary, speakers
-- You CANNOT filter by participants client-side because that data isn't returned
-- For external participant analytics, use `insights --external` (the ONLY option)
+- Use `--external` for meetings with external participants (filters by domain)
 
 ## Usage Tips
 
@@ -131,8 +125,6 @@ npm exec --yes --package=fireflies-api -- fireflies-api transcripts delete <id> 
   - Need to find content? Use `/ff-search` (searches all transcripts at once)
   - Need action items? Use `transcripts action-items export` (bulk export)
 
-**Limitations:**
-- `transcripts list` cannot filter by external/internal participants
-- If user asks for "meetings with external participants":
-  - Use `insights --external` for analytics about meetings with external participants
-  - Explain that listing with external filter is not yet available
+**External Participant Filtering:**
+- Use `--external` to filter for meetings with participants outside your company domain
+- Example: `transcripts list --last-week --external -o table`

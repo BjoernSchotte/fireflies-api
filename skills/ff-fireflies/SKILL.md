@@ -70,7 +70,7 @@ The `FIREFLIES_API_KEY` environment variable must be set before using any comman
 - Trust this skill documentation - it is authoritative
 - Use date shortcuts: `--last-week`, `--last-month`, `--days N`, `--today`, `--yesterday`
 - Always add `-o table` or `-o plain` unless user asks for JSON
-- Explain limitations honestly and suggest alternatives (e.g., "listing by external participants isn't available - use `insights --external` for analytics instead")
+- Use `--external` to filter for meetings with external participants
 
 ## Choosing the Right Command
 
@@ -78,16 +78,14 @@ The `FIREFLIES_API_KEY` environment variable must be set before using any comman
 |-------------|--------------|-----|
 | "List my meetings" | `transcripts list --mine` | Quick overview |
 | "Meetings I participated in" | `transcripts list --participant-me` | Includes meetings I didn't organize |
+| "Meetings with external participants" | `transcripts list --external` | Filters by domain |
 | "Show meeting details" | `transcripts get <id>` | Full content for one meeting |
 | "Find what was said about X" | `search "X"` | Efficient cross-transcript search |
 | "Meeting statistics/analytics" | `insights` | Aggregated analytics, no N+1 |
-| "Meetings with external participants" | `insights --external` | Analytics only (list filter not yet available) |
+| "External participant analytics" | `insights --external` | Stats for external meetings |
 | "All action items from last week" | `transcripts action-items export --last-week` | Bulk export |
 | "Who talked most in meeting X" | `transcripts speakers <id>` | Speaker analytics |
 
 **Output Format Guidance:**
 - Default to human-readable formats (`-o table` or `-o plain`)
 - Only use `-o json` when user explicitly requests JSON output
-
-**Known Limitations:**
-- `transcripts list` cannot filter by external/internal participants - use `insights --external` for analytics instead
