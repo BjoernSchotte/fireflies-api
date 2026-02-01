@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.6.0](https://github.com/BjoernSchotte/fireflies-api/compare/v0.5.1...v0.6.0) (2026-02-01)
+
+
+### Features
+
+* **cli:** add parallel pagination and progress indicators ([11da154](https://github.com/BjoernSchotte/fireflies-api/commit/11da15409ff84d0dec2a94ecb4315b14f51687b8))
+* **digest:** add --format html/json and live E2E tests ([1d6f166](https://github.com/BjoernSchotte/fireflies-api/commit/1d6f1661dfbb1d96837ffba725d83778f9c6091b))
+* **digest:** add weekly meeting digest generator ([da06bfb](https://github.com/BjoernSchotte/fireflies-api/commit/da06bfb30e54a262bc9c9d5e79ec04d72e3bbf28))
+* **digest:** enhance digest with highlights and improved stats ([fd91bb5](https://github.com/BjoernSchotte/fireflies-api/commit/fd91bb550269ce6ad639944c9806e5522cda3877))
+* **export:** add bulk export with multiple formats and zip packaging ([cc5c621](https://github.com/BjoernSchotte/fireflies-api/commit/cc5c621c950f27932672e049a403f8cd17ba065f))
+* **transcripts:** add --external flag to filter by external participants ([7731070](https://github.com/BjoernSchotte/fireflies-api/commit/773107002246e6884bcfa58b2aca420a7b38cfdd))
+* **transcripts:** add bulk query capability to list() for N+1 optimization ([63b4601](https://github.com/BjoernSchotte/fireflies-api/commit/63b4601dbf458311f3bee79d41e96bb4cb04e57b))
+
+
+### Bug Fixes
+
+* **plugin:** use npm exec for reliable auto-install ([928fac1](https://github.com/BjoernSchotte/fireflies-api/commit/928fac1cb28d6bf3106d61a4c7357c3047d004c4))
+
+
+### Documentation
+
+* add CLI development guidelines to CLAUDE.md ([2d4e23a](https://github.com/BjoernSchotte/fireflies-api/commit/2d4e23a34e0b2d88c3f5c274f3df12bb84858466))
+* add model usage guidelines to CLAUDE.md ([4b3f87f](https://github.com/BjoernSchotte/fireflies-api/commit/4b3f87f499300ff0f0ebb7c32a8f5ebb2e857c6a))
+* **skills:** prioritize date shortcuts in skill documentation ([28c6807](https://github.com/BjoernSchotte/fireflies-api/commit/28c6807f3ceda870e938908fb34fce66b232dcdc))
+* **skills:** update ff-transcripts and ff-fireflies for --external flag ([2118dfe](https://github.com/BjoernSchotte/fireflies-api/commit/2118dfeb8b6b341c4beba7bb7b38e7a292fa0d44))
+* **specs:** add 6 feature specifications for swarm implementation ([321661a](https://github.com/BjoernSchotte/fireflies-api/commit/321661ab8828cc2d585a5957f19cc6d89fdd5c7c))
+* **specs:** update feature specifications for swarm implementation ([1c63a95](https://github.com/BjoernSchotte/fireflies-api/commit/1c63a95ac10c7d2b0ac589e205bce42f6fb41c16))
+
 ## 0.5.0 (2026-01-28)
 
 
