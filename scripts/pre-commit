@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# Pre-commit hook: runs linting and tests for changed files only
+# To skip: git commit --no-verify
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Run linting (fast, runs on all files)
+echo ""
+echo "━━━ Linting (biome) ━━━"
+npm run check
+
+# Run typecheck (fast, checks all types)
+echo ""
+echo "━━━ Type checking ━━━"
+npm run typecheck
+
+# Find changed files (staged for commit)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  echo ""
+  echo "━━━ No staged files, skipping tests ━━━"
+  echo "✅ All pre-commit checks passed!"
+  exit 0
+fi
+
+# Collect test files to run
+TEST_FILES=""
+
+for FILE in $STAGED_FILES; do
+  # If the file is already a test file, add it
+  if [[ "$FILE" == test/unit/*.test.ts ]] || [[ "$FILE" == test/integration/*.test.ts ]]; then
+    TEST_FILES="$TEST_FILES $FILE"
+  fi
+
+  # If it's a source file, find corresponding test files
+  if [[ "$FILE" == src/*.ts ]]; then
+    # Extract the base name without extension
+    BASENAME=$(basename "$FILE" .ts)
+
+    # Look for matching test files
+    for TEST in test/unit/${BASENAME}.test.ts test/unit/${BASENAME}*.test.ts test/integration/${BASENAME}.test.ts test/integration/${BASENAME}*.test.ts; do
+      if [ -f "$TEST" ]; then
+        TEST_FILES="$TEST_FILES $TEST"
+      fi
+    done
+
+    # Special cases: helpers -> check helper tests
+    if [[ "$FILE" == src/helpers/*.ts ]]; then
+      HELPER_NAME=$(basename "$FILE" .ts)
+      for TEST in test/unit/${HELPER_NAME}.test.ts test/unit/${HELPER_NAME}*.test.ts; do
+        if [ -f "$TEST" ]; then
+          TEST_FILES="$TEST_FILES $TEST"
+        fi
+      done
+    fi
+
+    # CLI commands -> check CLI tests
+    if [[ "$FILE" == src/cli/*.ts ]] || [[ "$FILE" == src/cli/**/*.ts ]]; then
+      for TEST in test/unit/cli*.test.ts test/integration/cli*.test.ts; do
+        if [ -f "$TEST" ]; then
+          TEST_FILES="$TEST_FILES $TEST"
+        fi
+      done
+    fi
+  fi
+done
+
+# Remove duplicates and trim
+TEST_FILES=$(echo "$TEST_FILES" | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
+
+echo ""
+echo "━━━ Running tests ━━━"
+
+if [ -z "$TEST_FILES" ]; then
+  echo "No matching test files found for changed files."
+  echo "Running quick sanity check (core tests)..."
+  npm test -- --run test/unit/errors.test.ts test/unit/dedup.test.ts
+else
+  echo "Running tests for: $TEST_FILES"
+  npm test -- --run $TEST_FILES
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"

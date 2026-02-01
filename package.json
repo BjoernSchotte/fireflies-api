@@ -41,6 +41,8 @@
     "fireflies-api": "./dist/cli/index.js"
   },
   "scripts": {
+    "prepare": "[ -d .git ] && ./scripts/setup-hooks.sh || true",
+    "setup:hooks": "./scripts/setup-hooks.sh",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
