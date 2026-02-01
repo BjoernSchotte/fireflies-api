@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Model Usage
+
+- **Opus 4.5**: Plan mode, architectural decisions, complex debugging
+- **Sonnet 4.5**: Implementation, refactoring, tests, routine tasks
+
 ## Critical Rules
 
 - **NEVER commit or push without explicit user approval.** Always ask first before any git commit or push operation.
