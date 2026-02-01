@@ -1,16 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  type ClientFactory,
   getMeetingsForMultipleUsers,
   type MultiUserTranscript,
 } from '../../src/helpers/multi-user.js';
 import type { Transcript } from '../../src/types/transcript.js';
-
-// Mock the client module
-vi.mock('../../src/client.js', () => ({
-  FirefliesClient: vi.fn(),
-}));
-
-import { FirefliesClient } from '../../src/client.js';
 
 function createTranscript(overrides: Partial<Transcript> = {}): Transcript {
   return {
@@ -33,37 +27,37 @@ function createTranscript(overrides: Partial<Transcript> = {}): Transcript {
   };
 }
 
+/**
+ * Create a test client factory that returns predefined transcripts per API key.
+ */
+function createTestClientFactory(transcriptsByKey: Record<string, Transcript[]>): ClientFactory {
+  return (apiKey: string) => ({
+    transcripts: {
+      listAll: async function* () {
+        const transcripts = transcriptsByKey[apiKey] ?? [];
+        for (const t of transcripts) {
+          yield t;
+        }
+      },
+    },
+  });
+}
+
 describe('getMeetingsForMultipleUsers', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it('fetches transcripts from all API keys', async () => {
     const user1Transcripts = [createTranscript({ id: '1', title: 'User 1 Meeting' })];
     const user2Transcripts = [createTranscript({ id: '2', title: 'User 2 Meeting' })];
 
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation((config: { apiKey: string }) => ({
-      transcripts: {
-        listAll: async function* () {
-          if (config.apiKey === 'key1') {
-            for (const t of user1Transcripts) yield t;
-          } else {
-            for (const t of user2Transcripts) yield t;
-          }
-        },
-      },
-    }));
-
-    vi.useRealTimers();
+    const createClient = createTestClientFactory({
+      key1: user1Transcripts,
+      key2: user2Transcripts,
+    });
 
     const results: MultiUserTranscript[] = [];
-    for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], { delayMs: 0 })) {
+    for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], {
+      delayMs: 0,
+      createClient,
+    })) {
       results.push(result);
     }
 
@@ -80,25 +74,16 @@ describe('getMeetingsForMultipleUsers', () => {
     const sharedTranscript = createTranscript({ id: 'shared', title: 'Shared Meeting' });
     const uniqueTranscript = createTranscript({ id: 'unique', title: 'Unique Meeting' });
 
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation((config: { apiKey: string }) => ({
-      transcripts: {
-        listAll: async function* () {
-          // Both users have the shared transcript
-          yield sharedTranscript;
-          if (config.apiKey === 'key2') {
-            yield uniqueTranscript;
-          }
-        },
-      },
-    }));
-
-    vi.useRealTimers();
+    const createClient = createTestClientFactory({
+      key1: [sharedTranscript],
+      key2: [sharedTranscript, uniqueTranscript],
+    });
 
     const results: MultiUserTranscript[] = [];
     for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], {
       deduplicate: true,
       delayMs: 0,
+      createClient,
     })) {
       results.push(result);
     }
@@ -113,21 +98,16 @@ describe('getMeetingsForMultipleUsers', () => {
   it('does not deduplicate when deduplicate is false', async () => {
     const sharedTranscript = createTranscript({ id: 'shared', title: 'Shared Meeting' });
 
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation(() => ({
-      transcripts: {
-        listAll: async function* () {
-          yield sharedTranscript;
-        },
-      },
-    }));
-
-    vi.useRealTimers();
+    const createClient = createTestClientFactory({
+      key1: [sharedTranscript],
+      key2: [sharedTranscript],
+    });
 
     const results: MultiUserTranscript[] = [];
     for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], {
       deduplicate: false,
       delayMs: 0,
+      createClient,
     })) {
       results.push(result);
     }
@@ -141,66 +121,55 @@ describe('getMeetingsForMultipleUsers', () => {
   });
 
   it('passes filter options to listAll', async () => {
-    const listAllMock = vi.fn().mockImplementation(async function* () {
-      // Empty generator
-    });
+    let receivedFilter: unknown = null;
 
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation(() => ({
+    const createClient: ClientFactory = () => ({
       transcripts: {
-        listAll: listAllMock,
+        // biome-ignore lint/correctness/useYield: intentionally empty generator for test
+        listAll: async function* (filter) {
+          receivedFilter = filter;
+        },
       },
-    }));
-
-    vi.useRealTimers();
+    });
 
     const filter = { fromDate: '2024-01-01', mine: true };
     const results = [];
     for await (const result of getMeetingsForMultipleUsers(['key1'], {
       filter,
       delayMs: 0,
+      createClient,
     })) {
       results.push(result);
     }
 
-    expect(listAllMock).toHaveBeenCalledWith(filter);
+    expect(receivedFilter).toEqual(filter);
   });
 
   it('applies delay between iterations', async () => {
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation(() => ({
-      transcripts: {
-        listAll: async function* () {
-          yield createTranscript({ id: '1' });
-          yield createTranscript({ id: '2' });
-        },
-      },
-    }));
+    const createClient = createTestClientFactory({
+      key1: [createTranscript({ id: '1' }), createTranscript({ id: '2' })],
+    });
 
+    const startTime = Date.now();
     const results: MultiUserTranscript[] = [];
-    const generator = getMeetingsForMultipleUsers(['key1'], { delayMs: 100 });
-    const iterator = generator[Symbol.asyncIterator]();
 
-    // First item - no delay
-    const first = iterator.next();
-    await vi.advanceTimersByTimeAsync(0);
-    const { value: firstValue } = await first;
-    results.push(firstValue);
+    for await (const result of getMeetingsForMultipleUsers(['key1'], {
+      delayMs: 50,
+      createClient,
+    })) {
+      results.push(result);
+    }
 
-    // Second item - should have 100ms delay
-    const secondPromise = iterator.next();
-    await vi.advanceTimersByTimeAsync(100);
-    const { value: secondValue } = await secondPromise;
-    results.push(secondValue);
+    const elapsed = Date.now() - startTime;
 
     expect(results).toHaveLength(2);
+    // Should have at least one delay of ~50ms between items
+    expect(elapsed).toBeGreaterThanOrEqual(40); // Allow some timing variance
   });
 
   it('handles empty API keys array', async () => {
-    vi.useRealTimers();
-
     const results: MultiUserTranscript[] = [];
-    for await (const result of getMeetingsForMultipleUsers([])) {
+    for await (const result of getMeetingsForMultipleUsers([], { delayMs: 0 })) {
       results.push(result);
     }
 
@@ -208,19 +177,16 @@ describe('getMeetingsForMultipleUsers', () => {
   });
 
   it('handles users with no transcripts', async () => {
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation(() => ({
-      transcripts: {
-        listAll: async function* () {
-          // Empty generator
-        },
-      },
-    }));
-
-    vi.useRealTimers();
+    const createClient = createTestClientFactory({
+      key1: [],
+      key2: [],
+    });
 
     const results: MultiUserTranscript[] = [];
-    for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], { delayMs: 0 })) {
+    for await (const result of getMeetingsForMultipleUsers(['key1', 'key2'], {
+      delayMs: 0,
+      createClient,
+    })) {
       results.push(result);
     }
 
@@ -228,22 +194,16 @@ describe('getMeetingsForMultipleUsers', () => {
   });
 
   it('tracks correct source index for each transcript', async () => {
-    const MockFirefliesClient = FirefliesClient as unknown as ReturnType<typeof vi.fn>;
-    MockFirefliesClient.mockImplementation((config: { apiKey: string }) => ({
-      transcripts: {
-        listAll: async function* () {
-          // Yield transcripts with IDs matching the key index
-          const index = config.apiKey.replace('key', '');
-          yield createTranscript({ id: `transcript-${index}` });
-        },
-      },
-    }));
-
-    vi.useRealTimers();
+    const createClient = createTestClientFactory({
+      key0: [createTranscript({ id: 'transcript-0' })],
+      key1: [createTranscript({ id: 'transcript-1' })],
+      key2: [createTranscript({ id: 'transcript-2' })],
+    });
 
     const results: MultiUserTranscript[] = [];
     for await (const result of getMeetingsForMultipleUsers(['key0', 'key1', 'key2'], {
       delayMs: 0,
+      createClient,
     })) {
       results.push(result);
     }

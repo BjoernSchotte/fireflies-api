@@ -4,6 +4,21 @@ import type { Transcript } from '../types/transcript.js';
 import { Deduplicator } from '../utils/dedup.js';
 
 /**
+ * Minimal client interface needed for multi-user fetching.
+ * Used for dependency injection in tests.
+ */
+export interface MultiUserClient {
+  transcripts: {
+    listAll: (params?: Omit<TranscriptsListParams, 'skip' | 'limit'>) => AsyncIterable<Transcript>;
+  };
+}
+
+/**
+ * Factory function for creating clients from API keys.
+ */
+export type ClientFactory = (apiKey: string) => MultiUserClient;
+
+/**
  * Options for fetching transcripts from multiple users.
  */
 export interface MultiUserOptions {
@@ -25,6 +40,11 @@ export interface MultiUserOptions {
    * @default 100
    */
   delayMs?: number;
+  /**
+   * Factory for creating clients from API keys.
+   * @internal Used for testing - defaults to FirefliesClient
+   */
+  createClient?: ClientFactory;
 }
 
 /**
@@ -75,7 +95,12 @@ export async function* getMeetingsForMultipleUsers(
   apiKeys: string[],
   options: MultiUserOptions = {}
 ): AsyncIterable<MultiUserTranscript> {
-  const { deduplicate = true, filter, delayMs = 100 } = options;
+  const {
+    deduplicate = true,
+    filter,
+    delayMs = 100,
+    createClient = defaultClientFactory,
+  } = options;
 
   // Create deduplicator if enabled
   const dedup = deduplicate ? new Deduplicator() : null;
@@ -85,7 +110,7 @@ export async function* getMeetingsForMultipleUsers(
 
   // Iterate through each API key sequentially
   for (const [sourceIndex, apiKey] of apiKeys.entries()) {
-    const client = new FirefliesClient({ apiKey });
+    const client = createClient(apiKey);
 
     // Iterate through all transcripts for this user
     for await (const transcript of client.transcripts.listAll(filter)) {
@@ -114,4 +139,11 @@ export async function* getMeetingsForMultipleUsers(
  */
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Default client factory using FirefliesClient.
+ */
+function defaultClientFactory(apiKey: string): MultiUserClient {
+  return new FirefliesClient({ apiKey });
 }
