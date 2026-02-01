@@ -178,6 +178,11 @@ Events: `connect` → `auth.success` → `connection.established` → `transcrip
 
 **Helpers** in `src/helpers/`: convenience features like multi-user fetch with deduplication, auto-pagination.
 
+## CLI Development
+
+- **Global option `-o`** is reserved for output format (json/table/plain). Use `-d, --dest` for file/directory output paths in subcommands.
+- **Type CLI options** with an explicit interface rather than `Record<string, unknown>` to enable dot notation access and avoid TypeScript/Biome conflicts.
+
 ## Key Documentation
 
 - `specs/ARCHITECTURE.md` - Full design specification and API design
