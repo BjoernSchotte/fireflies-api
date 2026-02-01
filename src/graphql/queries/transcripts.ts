@@ -1,5 +1,12 @@
 import { aggregateActionItems } from '../../helpers/action-items-format.js';
+import { batch } from '../../helpers/batch.js';
 import { extractDomain, hasExternalParticipants } from '../../helpers/domain-utils.js';
+import {
+  createZipArchive,
+  type ExportFormat,
+  exportTranscript,
+  generateExportFilename,
+} from '../../helpers/export-formats.js';
 import { analyzeMeetings } from '../../helpers/meeting-insights.js';
 import { paginate } from '../../helpers/pagination.js';
 import { searchTranscript } from '../../helpers/search.js';
@@ -7,6 +14,7 @@ import type {
   AggregatedActionItemsResult,
   ExportActionItemsParams,
 } from '../../types/action-items.js';
+import type { BulkExportParams, BulkExportResult, ExportedFile } from '../../types/bulk-export.js';
 import type { MeetingInsights } from '../../types/meeting-insights.js';
 import type {
   TranscriptGetParams,
@@ -360,6 +368,41 @@ export interface TranscriptsAPI {
    * ```
    */
   exportActionItems(params?: ExportActionItemsParams): Promise<AggregatedActionItemsResult>;
+
+  /**
+   * Export multiple transcripts to various formats.
+   *
+   * Fetches transcripts matching the filter criteria, converts each to the
+   * specified format, and optionally packages them as a zip archive.
+   *
+   * @param params - Export options including format, filters, and output settings
+   * @returns Export result with files and optional zip buffer
+   *
+   * @example
+   * ```typescript
+   * // Export last week's meetings as markdown
+   * const result = await client.transcripts.bulkExport({
+   *   fromDate: '2024-01-08',
+   *   toDate: '2024-01-15',
+   *   format: 'markdown',
+   *   onProgress: (done, total) => console.log(`${done}/${total}`),
+   * });
+   *
+   * // Write files to disk
+   * for (const file of result.files) {
+   *   await writeFile(`./exports/${file.filename}`, file.content);
+   * }
+   *
+   * // Or get as zip
+   * const zipResult = await client.transcripts.bulkExport({
+   *   fromDate: '2024-01-08',
+   *   format: 'csv',
+   *   asZip: true,
+   * });
+   * await writeFile('exports.zip', zipResult.zip);
+   * ```
+   */
+  bulkExport(params?: BulkExportParams): Promise<BulkExportResult>;
 }
 
 /**
@@ -618,6 +661,21 @@ export function createTranscriptsAPI(client: GraphQLClient): TranscriptsAPI {
       // Aggregate action items using the helper
       return aggregateActionItems(transcripts, {}, filterOptions);
     },
+
+    async bulkExport(params: BulkExportParams = {}): Promise<BulkExportResult> {
+      const { format = 'markdown', asZip = false, onProgress } = params;
+
+      // 1. Collect transcript IDs to export
+      const transcriptIds = await collectTranscriptIds(client, this, params);
+
+      // 2. Fetch and convert each transcript
+      const files = await convertTranscripts(this, transcriptIds, format, onProgress);
+
+      // 3. Package as zip if requested
+      const zip = asZip ? await createZipArchive(files) : undefined;
+
+      return { files, zip, format, totalExported: files.length };
+    },
   };
 }
 
@@ -746,4 +804,78 @@ function buildListVariables(params?: TranscriptsListParams): Record<string, unkn
     participant_email: params.participant_email,
     date: params.date,
   };
+}
+
+// --- Bulk export helpers ---
+
+/**
+ * Collect transcript IDs based on export params.
+ * Either uses provided IDs or queries for matching transcripts.
+ */
+async function collectTranscriptIds(
+  client: GraphQLClient,
+  api: TranscriptsAPI,
+  params: BulkExportParams
+): Promise<string[]> {
+  const { ids, fromDate, toDate, mine, organizers, participants, external, limit } = params;
+
+  // If explicit IDs provided, use them directly
+  if (ids?.length) {
+    return ids;
+  }
+
+  // Get internal domain for external filtering
+  let internalDomain: string | undefined;
+  if (external) {
+    const userQuery = 'query { user { email } }';
+    const userData = await client.execute<{ user: { email: string } }>(userQuery);
+    internalDomain = extractDomain(userData.user.email);
+  }
+
+  // Collect matching transcript IDs
+  const result: string[] = [];
+  for await (const t of api.listAll({ fromDate, toDate, mine, organizers, participants })) {
+    // Skip if filtering for external and no external participants
+    if (internalDomain && !hasExternalParticipants(t.participants, internalDomain)) {
+      continue;
+    }
+    result.push(t.id);
+    if (limit && result.length >= limit) break;
+  }
+
+  return result;
+}
+
+/**
+ * Fetch and convert transcripts to the specified format.
+ */
+async function convertTranscripts(
+  api: TranscriptsAPI,
+  transcriptIds: string[],
+  format: ExportFormat,
+  onProgress?: (completed: number, total: number) => void
+): Promise<ExportedFile[]> {
+  const files: ExportedFile[] = [];
+  const extension = format === 'markdown' ? 'md' : format;
+  let completed = 0;
+  const total = transcriptIds.length;
+
+  for await (const result of batch(
+    transcriptIds,
+    async (id) => {
+      const transcript = await api.get(id);
+      const content = await exportTranscript(transcript, format);
+      const filename = generateExportFilename(transcript, extension);
+      return { id, title: transcript.title, filename, content };
+    },
+    { delayMs: 100 }
+  )) {
+    if (!result.error) {
+      files.push(result.result);
+    }
+    completed++;
+    onProgress?.(completed, total);
+  }
+
+  return files;
 }

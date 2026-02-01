@@ -72,6 +72,17 @@ export {
 } from './helpers/digest-templates.js';
 export { extractDomain, hasExternalParticipants } from './helpers/domain-utils.js';
 export {
+  type CsvExportOptions,
+  createZipArchive,
+  type ExportFile,
+  exportTranscript,
+  generateExportFilename,
+  sanitizeFilename,
+  type TextExportOptions,
+  transcriptToCsv,
+  transcriptToText,
+} from './helpers/export-formats.js';
+export {
   type ExternalQuestion,
   type ExternalQuestionsResult,
   findExternalParticipantQuestions,
@@ -147,6 +158,13 @@ export type {
   BiteSource,
   BiteUser,
 } from './types/bite.js';
+// Bulk export types
+export type {
+  BulkExportParams,
+  BulkExportResult,
+  ExportedFile,
+  ExportFormat,
+} from './types/bulk-export.js';
 // Configuration
 export type {
   FirefliesConfig,

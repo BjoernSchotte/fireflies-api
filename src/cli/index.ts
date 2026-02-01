@@ -7,6 +7,7 @@ import { registerAudioCommand } from './commands/audio.js';
 import { registerBitesCommand } from './commands/bites.js';
 import { registerDigestCommand } from './commands/digest.js';
 import { registerExportCommand } from './commands/export.js';
+import { registerExportBulkCommand } from './commands/export-bulk.js';
 import { registerInsightsCommand } from './commands/insights.js';
 import { registerMeetingsCommand } from './commands/meetings.js';
 import { registerRealtimeCommand } from './commands/realtime.js';
@@ -50,5 +51,6 @@ registerAiAppsCommand(program);
 registerAudioCommand(program);
 registerRealtimeCommand(program);
 registerExportCommand(program);
+registerExportBulkCommand(program);
 
 program.parse();
