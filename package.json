@@ -87,7 +87,7 @@
   "homepage": "https://github.com/BjoernSchotte/fireflies-api#readme",
   "dependencies": {
     "archiver": "^7.0.1",
-    "commander": "^13.0.0",
+    "commander": "^14.0.3",
     "ora": "^9.1.0",
     "socket.io-client": "^4.8.3"
   },
